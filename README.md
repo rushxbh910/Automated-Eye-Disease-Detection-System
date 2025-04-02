@@ -55,7 +55,7 @@ The table below shows an example, it is not a recommendation. -->
  | gpu_p100_nvlink/ gpu_a100_pcie/ gpu_v100/ gpu_a100_pcie | approximately for 20 hours        | Image Dataset of 4GB needs high processing power |
  | gpu_v100 | 	1-2 GPUs for real-time inference                 |   Ensures low-latency model serving with a target of <200ms per image.        |
  | gpu_p100/ gpu_mi100/ compute_liqid                      | approximately for 45 hours        | Incase 4 core GPU server not available           |
- | Floating IPs                                            | 1 for entire project duration     |                                                  |
+ | Floating IPs                                            | 3 for entire project duration     |                                                  |
  
 
 ### Detailed design plan

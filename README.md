@@ -73,24 +73,15 @@ and which optional "difficulty" points you are attempting. -->
 
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, 
 and which optional "difficulty" points you are attempting. -->
-###### Model Training at Scale
-A. Train and Re-train
-We will train a convolutional neural network (CNN)-based image classification model on eye disease dataset. The model will be retrained periodically using new production data to adapt to evolving patterns.
-The CNN model is chosen for its efficiency in image classification tasks. We will experiment with different architectures (ResNet, EfficientNet) to compare accuracy and training time.
-B. Training Strategies for Large Models (Difficulty Point)
-If the model doesn’t fit on a single low-end GPU, we will implement Distributed Data Parallel (DDP) or Fully Sharded Data Parallel (FSDP) to enable multi-GPU training. We will analyze the impact of batch size adjustments and gradient accumulation on training efficiency.
-C. Distributed Training for Faster Training (Difficulty Point)
-We will compare training time on one GPU vs. multiple GPUs using DDP (data parallel training) and FSDP (sharded gradients). A plot of training time vs. GPU count will be included in our report.
+######## Model Training at Scale
+We're building a convolutional neural network (CNN) to classify eye diseases from medical images. Given CNNs' efficiency in image classification, we’ll experiment with different architectures like ResNet and EfficientNet to find the best balance between accuracy and training time. To keep the model up to date with evolving patterns, we’ll periodically retrain it using new production data.
 
-######  Meeting Unit 5 Requirements: Model Training Infrastructure & Platform
-A. Experiment Tracking
-We will self-host an MLFlow/W&B server on Chameleon to track training metrics, hyperparameters, and model performance. Logging will be integrated into our training code to store all experiments.
-B. Scheduling Training Jobs
-A Ray cluster will be set up for training job scheduling. Model training will be submitted as a job in a continuous training pipeline.
-Ray Train for fault tolerance & checkpointing:
-We will try to incorporate Ray Train in the training process that will support automatic failure recovery. 
-Hyperparameter Tuning with Ray Tune:
-Advanced tuning algorithms (Bayesian optimization, ASHA) will be used for efficient hyperparameter search. A comparison of different tuning methods will be presented.
+Since large models can be challenging to train on a single low-end GPU, we’ll explore Distributed Data Parallel (DDP) and Fully Sharded Data Parallel (FSDP) techniques to enable multi-GPU training. We’ll also analyze how adjusting batch sizes and using gradient accumulation can improve training efficiency. To understand the impact of distributed training, we’ll compare training times across different GPU setups—single vs. multi-GPU—using DDP and FSDP. Our findings, including a plot of training time versus GPU count, will be summarized in a report.
+
+######## Model Training Infrastructure & Platform
+To meet the requirements of Unit 5, we plan to build a robust model training infrastructure that ensures efficient experiment tracking, job scheduling, and fault tolerance. We will self-host an MLFlow or Weights & Biases (W&B) server on Chameleon to track key training metrics, hyperparameters, and overall model performance. This tracking system will be fully integrated into our training code, allowing us to log and store all experiments for future analysis and improvement.
+
+For scheduling training jobs, we will deploy a Ray cluster to manage job submissions within a continuous training pipeline. To enhance fault tolerance, we aim to incorporate Ray Train, which supports automatic failure recovery and checkpointing to ensure seamless training even in the event of system interruptions. Additionally, we will leverage Ray Tune for hyperparameter tuning, utilizing advanced optimization techniques like Bayesian optimization and ASHA to efficiently explore the search space. A comparative analysis of different tuning methods will also be conducted to determine the most effective approach for our models.
 
 #### Model serving and monitoring platforms
 

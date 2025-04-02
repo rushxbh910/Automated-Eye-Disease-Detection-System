@@ -28,6 +28,16 @@ link to their contributions in all repos here. -->
 
 |
 
+### Contributors
+
+| Name             | Responsible for                                                                 | Link to their commits in this repo                                                                 |
+|------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Rushabh Bhatt    | CI/CD, Infrastructure as Code, Version Control, Proactive Monitoring and Logging | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main        |
+| Shruti Bora      |                                                                                  |                                                                                                      |
+| Aryan Ajmera     |                                                                                  |                                                                                                      |
+| Vaibhav Rouduri  | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard |                                                                                              |
+
+
 ### System diagram
 
 ![System Diagram](System-Diagram.png)

@@ -21,7 +21,7 @@ link to their contributions in all repos here. -->
 | Name             | Responsible for                                                                 | Link to their commits in this repo                                                                 |
 |------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
 | Rushabh Bhatt    | CI/CD, Infrastructure as Code, Version Control, Proactive Monitoring and Logging | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main        |
-| Shruti Bora      |                                                                                  |                                                                                                      |
+| Shruti Bora      |   Train and Re-train, Training Strategies for Large Models, Scheduling Training Jobs  |  https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main/?author=sb9880   |
 | Aryan Ajmera     |                                                                                  |                                                                                                      |
 | Vaibhav Rouduri  | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main/?author=vaibhavrouduri                                                                                             |
 
@@ -50,12 +50,13 @@ conditions under which it may be used. -->
 how much/when, justification. Include compute, floating IPs, persistent storage. 
 The table below shows an example, it is not a recommendation. -->
 
-| Requirement     | How many/when                                     | Justification |
-|-----------------|---------------------------------------------------|---------------|
-| gpu_v100 | 	1-2 GPUs for real-time inference                    |   Ensures low-latency model serving with a target of <200ms per image.        |
-| `gpu_mi100`     | 4 hour block twice a week                         |               |
-| Floating IPs    | 1 for entire project duration, 1 for sporadic use |               |
-| etc             |                                                   |               |
+ | Requirement                                             | How many/when                     | Justification                                    |
+ |---------------------------------------------------------|-----------------------------------|--------------------------------------------------|
+ | gpu_p100_nvlink/ gpu_a100_pcie/ gpu_v100/ gpu_a100_pcie | approximately for 20 hours        | Image Dataset of 4GB needs high processing power |
+ | gpu_v100 | 	1-2 GPUs for real-time inference                 |   Ensures low-latency model serving with a target of <200ms per image.        |
+ | gpu_p100/ gpu_mi100/ compute_liqid                      | approximately for 45 hours        | Incase 4 core GPU server not available           |
+ | Floating IPs                                            | 1 for entire project duration     |                                                  |
+ 
 
 ### Detailed design plan
 

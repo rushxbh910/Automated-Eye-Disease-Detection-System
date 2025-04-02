@@ -18,15 +18,13 @@ Then, each row after that is: name of contributor, their role, and in the third 
 you will link to their contributions. If your project involves multiple repos, you will 
 link to their contributions in all repos here. -->
 
-| Name                            | Responsible for                 | Link to their commits in this repo |
-|---------------------------------|---------------------------------|------------------------------------|
-| Rushabh Bhatt                   | CI/CD, Infrastructure as Code,Version Control, Proactive, Monitoring and Logging  | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main
-|
-| Shruti Bora                     |                                 |                                    |
-| Aryan Ajmera                    | model serving and metrics monitoring                                |                                    |
-| Vaibhav Rouduri                 | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard    |
+| Name             | Responsible for                                                                 | Link to their commits in this repo                                                                 |
+|------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Rushabh Bhatt    | CI/CD, Infrastructure as Code, Version Control, Proactive Monitoring and Logging | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main        |
+| Shruti Bora      |                                                                                  |                                                                                                      |
+| Aryan Ajmera     |                                                                                  |                                                                                                      |
+| Vaibhav Rouduri  | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard |                                                                                              |
 
-|
 
 ### System diagram
 

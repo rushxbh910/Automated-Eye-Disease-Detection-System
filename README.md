@@ -20,7 +20,7 @@ link to their contributions in all repos here. -->
 
 | Name             | Responsible for                                                                 | Link to their commits in this repo                                                                 |
 |------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Rushabh Bhatt    | CI/CD, Infrastructure as Code, Version Control, Proactive Monitoring and Logging | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main        |
+| Rushabh Bhatt    | CI/CD, Infrastructure as Code, Version Control, Proactive Monitoring and Logging | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main?author=rushxbh910        |
 | Shruti Bora      |   Train and Re-train, Training Strategies for Large Models, Scheduling Training Jobs  |  https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main/?author=sb9880   |
 | Aryan Ajmera     |        model serving and metrics monitoring                                                                          |       https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits?author=AryanAjmera18                                                                                               |
 | Vaibhav Rouduri  | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main/?author=vaibhavrouduri                                                                                             |
@@ -40,8 +40,10 @@ conditions under which it may be used. -->
 |------------------------------|--------------------|-------------------|
 | Eye Disease Image Dataset    | A total of 5335 images of healthy and affected eye images were collected from Anwara Hamida Eye Hospital in Faridpur and BNS Zahrul Haque Eye Hospital in Faridpur district with the help of the hospital authorities. Then from these original images, a total of 16242 augmented images are produced by using Rotation, Width shifting, Height shifting, Translation, Flipping, and Zooming techniques to increase the number of data.                     |You can share, copy and modify this dataset so long as you give appropriate credit, provide a link to the CC BY license, and indicate if changes were made, but you may not do so in a way that suggests the rights holder has endorsed you or your use of the dataset. Note that further permission may be required for any content within the dataset that is identified as belonging to a third party.                   |
 | Reference for the above      | Riadur Rashid, Mohammad ; Sharmin, Shayla ; Khatun, Tania; Hasan, Md Zahid; Shorif Uddin , Mohammad  (2024), “Eye Disease Image Dataset”, Mendeley Data, V1, doi: 10.17632/s9bfhswzjb.1                   |                   |
-| Base model 1                 |                    |                   |
-| etc                          |                    |                   |
+| Base model 1                 |  Convolutional Neural Networks (CNNs)| Custom CNN: CNN from scratch with multiple convolutional layers, batch normalization, and dropout for regularization.
+|| | EfficientNet (B0-B7): This model is optimized for image classification and provides a good balance between accuracy and efficiency.
+|||ResNet (ResNet-50): The residual connections help train deep networks effectively.|
+| | Vision Transformers (ViTs)| This model captures long-range dependencies and performs well on large datasets.
 
 
 ### Summary of infrastructure requirements

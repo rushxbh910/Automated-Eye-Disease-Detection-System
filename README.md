@@ -73,12 +73,12 @@ and which optional "difficulty" points you are attempting. -->
 
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, 
 and which optional "difficulty" points you are attempting. -->
-######## Model Training at Scale
+###### Model Training at Scale
 We're building a convolutional neural network (CNN) to classify eye diseases from medical images. Given CNNs' efficiency in image classification, we’ll experiment with different architectures like ResNet and EfficientNet to find the best balance between accuracy and training time. To keep the model up to date with evolving patterns, we’ll periodically retrain it using new production data.
 
 Since large models can be challenging to train on a single low-end GPU, we’ll explore Distributed Data Parallel (DDP) and Fully Sharded Data Parallel (FSDP) techniques to enable multi-GPU training. We’ll also analyze how adjusting batch sizes and using gradient accumulation can improve training efficiency. To understand the impact of distributed training, we’ll compare training times across different GPU setups—single vs. multi-GPU—using DDP and FSDP. Our findings, including a plot of training time versus GPU count, will be summarized in a report.
 
-######## Model Training Infrastructure & Platform
+###### Model Training Infrastructure & Platform
 To meet the requirements of Unit 5, we plan to build a robust model training infrastructure that ensures efficient experiment tracking, job scheduling, and fault tolerance. We will self-host an MLFlow or Weights & Biases (W&B) server on Chameleon to track key training metrics, hyperparameters, and overall model performance. This tracking system will be fully integrated into our training code, allowing us to log and store all experiments for future analysis and improvement.
 
 For scheduling training jobs, we will deploy a Ray cluster to manage job submissions within a continuous training pipeline. To enhance fault tolerance, we aim to incorporate Ray Train, which supports automatic failure recovery and checkpointing to ensure seamless training even in the event of system interruptions. Additionally, we will leverage Ray Tune for hyperparameter tuning, utilizing advanced optimization techniques like Bayesian optimization and ASHA to efficiently explore the search space. A comparative analysis of different tuning methods will also be conducted to determine the most effective approach for our models.

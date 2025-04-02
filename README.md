@@ -1,13 +1,13 @@
 
 ## Automated Eye Disease Detection System for Enhanced Clinical Diagnostics
 
-Value Proposition:
+#### Value Proposition:
 Our project focuses on developing a machine learning system that seamlessly integrates into the existing diagnostic framework within eye hospitals and clinics. We're not trying to create a new business; instead, we're aiming to augment the capabilities of current medical practices. This system will analyze retinal images, providing ophthalmologists with an automated tool to aid in the early and accurate detection of a range of eye diseases, including Retinitis Pigmentosa, Retinal Detachment, Pterygium, Myopia, Macular Scar, Glaucoma, Disc Edema, Diabetic Retinopathy, and Central Serous Chorioretinopathy. 
 
-Current Status Quo:
+#### Current Status Quo:
 Currently, the diagnosis of these diseases relies heavily on manual examination by specialists, a process that can be time-consuming and subjective. Even with advanced imaging technologies like fundus photography and OCT, the interpretation of these images demands significant expertise, often leading to delays in diagnosis. Our system aims to streamline this process, providing quick and consistent analysis to support clinicians in making informed decisions.
 
-Business Metric:
+#### Business Metric:
 The success of our system will be judged on its ability to improve the efficiency and accuracy of eye disease diagnosis. To quantify this, we'll focus on several key business metrics. First, we'll measure the reduction in "time to diagnosis," comparing the time taken to reach a diagnosis with our automated system versus the current manual process. Secondly, we'll assess the "diagnostic accuracy" by determining the concordance rate between our system's predictions and the gold standard diagnosis provided by ophthalmologists. We'll also examine the system's "sensitivity and specificity," ensuring it accurately identifies both positive and negative cases. Additionally, we'll track the "throughput" of our system, which refers to the number of images processed per unit time, to gauge its efficiency in a clinical setting. Finally, and perhaps most importantly, we will focus on the "reduction of false negatives". A false negative could have dire consequences for a patient, and reducing these instances is a paramount concern for our system’s success. By focusing on these metrics, we aim to demonstrate the tangible benefits of our machine learning system in improving patient care and clinical workflows.
 
 ### Contributors

@@ -18,16 +18,15 @@ Then, each row after that is: name of contributor, their role, and in the third 
 you will link to their contributions. If your project involves multiple repos, you will 
 link to their contributions in all repos here. -->
 
+| Name                            | Responsible for                 | Link to their commits in this repo |
+|---------------------------------|---------------------------------|------------------------------------|
+| Rushabh Bhatt                   | CI/CD, Infrastructure as Code,Version Control, Proactive, Monitoring and Logging  | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main
+|
+| Shruti Bora                     |                                 |                                    |
+| Aryan Ajmera                    | model serving and metrics monitoring                                |                                    |
+| Vaibhav Rouduri                 | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard    |
 
-### Contributors
-
-| Name             | Responsible for                                                                 | Link to their commits in this repo                                                                 |
-|------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Rushabh Bhatt    | CI/CD, Infrastructure as Code, Version Control, Proactive Monitoring and Logging | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main        |
-| Shruti Bora      |   Train and Re-train, Training Strategies for Large Models, Scheduling Training Jobs  |  https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main/?author=sb9880   |
-| Aryan Ajmera     |                                                                                  |                                                                                                      |
-| Vaibhav Rouduri  | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard | https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System/commits/main/?author=vaibhavrouduri                                                                                             |
-
+|
 
 ### System diagram
 
@@ -53,12 +52,12 @@ conditions under which it may be used. -->
 how much/when, justification. Include compute, floating IPs, persistent storage. 
 The table below shows an example, it is not a recommendation. -->
 
-| Requirement                                             | How many/when                     | Justification                                    |
-|---------------------------------------------------------|-----------------------------------|--------------------------------------------------|
-| gpu_p100_nvlink/ gpu_a100_pcie/ gpu_v100/ gpu_a100_pcie | approximately for 20 hours        | Image Dataset of 4GB needs high processing power |
-| gpu_p100/ gpu_mi100/ compute_liqid                      | approximately for 45 hours        | Incase 4 core GPU server not available           |
-| Floating IPs                                            | 1 for entire project duration     |                                                  |
-
+| Requirement     | How many/when                                     | Justification |
+|-----------------|---------------------------------------------------|---------------|
+| gpu_v100 | 	1-2 GPUs for real-time inference                    |   Ensures low-latency model serving with a target of <200ms per image.        |
+| `gpu_mi100`     | 4 hour block twice a week                         |               |
+| Floating IPs    | 1 for entire project duration, 1 for sporadic use |               |
+| etc             |                                                   |               |
 
 ### Detailed design plan
 
@@ -74,7 +73,7 @@ and which optional "difficulty" points you are attempting. -->
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, 
 and which optional "difficulty" points you are attempting. -->
 ###### Model Training at Scale
-A. Train and Re-train 
+A. Train and Re-train
 We will train a convolutional neural network (CNN)-based image classification model on eye disease dataset. The model will be retrained periodically using new production data to adapt to evolving patterns.
 The CNN model is chosen for its efficiency in image classification tasks. We will experiment with different architectures (ResNet, EfficientNet) to compare accuracy and training time.
 B. Training Strategies for Large Models (Difficulty Point)
@@ -94,8 +93,13 @@ Advanced tuning algorithms (Bayesian optimization, ASHA) will be used for effici
 
 #### Model serving and monitoring platforms
 
-<!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements, 
-and which optional "difficulty" points you are attempting. -->
+For our Automated Eye Disease Detection System, model serving is a critical aspect that must strike a balance between low-latency inference and high diagnostic precision. Given the requirement for real-time decision-making support in clinical diagnostics, our serving architecture will support both online inference for real-time predictions and bulk inference for mass retrospective analysis. We will deploy our model using containerized microservices to ensure modularity and scalability, leveraging MLflow integrated with DagsHub for efficient version control and collaborative model management. Model quantization and pruning will be explored to optimize performance, with quantization-aware training minimizing accuracy loss while improving inference speed.
+
+Our deployment strategy is based on Chameleon Cloud with flexible hosting coupled with native monitoring and dynamically adjusting resources. For maintaining low costs, we will implement auto-scaling policies that dynamically shift resource allocation based on usage patterns. System-level optimisations will comprise concurrent image processing batching dynamically, avoiding cold start by warming up instances of the model, parallel model execution to test robustness, and model ensemble to boost accuracy.
+
+Continuous monitoring will be crucial to maintain top performance in the long term, tracking operational metrics such as inference latency (target <200ms), system throughput, and infrastructure utilization, as well as prediction quality metrics such as sensitivity, specificity, and false negatives. Drift detection mechanisms will identify covariate shift in input distribution, concept drift in model behavior, and lagging ground truth labels via routine validation.
+
+Automated retraining pipelines will incorporate fresh data in a weekly retrain schedule, with shadow testing to compare new models against production models and canary testing for phased rollouts. Active logging and monitoring will leverage MLflow and DagsHub for real-time anomaly detection, versioning, and troubleshooting. The products will provide automated model performance monitoring, drift detection, and shared monitoring for team-level model updates. By combining robust serving abilities with intensive monitoring, our system will be extremely reliable, efficient, and accurate, and thus a good project to demonstrate cloud-based AI-powered diagnostics
 
 #### Data pipeline
 

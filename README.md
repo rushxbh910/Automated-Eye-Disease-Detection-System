@@ -84,7 +84,7 @@ diagram, (3) justification for your strategy, (4) relate back to lecture materia
 
 <!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, 
 and which optional "difficulty" points you are attempting. -->
-# Model Training at Scale
+######  Model Training at Scale
 A. Train and Re-train
 We will train a convolutional neural network (CNN)-based image classification model on eye disease dataset. The model will be retrained periodically using new production data to adapt to evolving patterns.
 The CNN model is chosen for its efficiency in image classification tasks. We will experiment with different architectures (ResNet, EfficientNet) to compare accuracy and training time.
@@ -93,7 +93,7 @@ If the model doesn’t fit on a single low-end GPU, we will implement Distribute
 C. Distributed Training for Faster Training (Difficulty Point)
 We will compare training time on one GPU vs. multiple GPUs using DDP (data parallel training) and FSDP (sharded gradients). A plot of training time vs. GPU count will be included in our report.
 
-# Meeting Unit 5 Requirements: Model Training Infrastructure & Platform
+###### Meeting Unit 5 Requirements: Model Training Infrastructure & Platform
 A. Experiment Tracking
 We will self-host an MLFlow/W&B server on Chameleon to track training metrics, hyperparameters, and model performance. Logging will be integrated into our training code to store all experiments.
 B. Scheduling Training Jobs

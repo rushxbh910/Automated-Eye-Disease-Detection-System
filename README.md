@@ -24,10 +24,10 @@ link to their contributions in all repos here. -->
 |
 | Shruti Bora                     |                                 |                                    |
 | Aryan Ajmera                    |                                 |                                    |
-| Vaibhav Rouduri                 |                                 |                                    |
-
-
-
+| Vaibhav Rouduri                 | Persistent Storage, Offline     |                                    |
+|                                 | Data, Data Pipelines, Online    |                                    |
+|                                 | Data, Interactive Data          |                                    |
+|                                 | Dashboard                       |                                    | 
 ### System diagram
 
 ![System Diagram](System-Diagram.png)
@@ -38,12 +38,12 @@ link to their contributions in all repos here. -->
 Name of data/model, conditions under which it was created (ideally with links/references), 
 conditions under which it may be used. -->
 
-|              | How it was created | Conditions of use |
-|--------------|--------------------|-------------------|
-| Data set 1   |                    |                   |
-| Data set 2   |                    |                   |
-| Base model 1 |                    |                   |
-| etc          |                    |                   |
+|                              | How it was created | Conditions of use |
+|------------------------------|--------------------|-------------------|
+| Eye Disease Image Dataset    | A total of 5335 images of healthy and affected eye images were collected from Anwara Hamida Eye Hospital in Faridpur and BNS Zahrul Haque Eye Hospital in Faridpur district with the help of the hospital authorities. Then from these original images, a total of 16242 augmented images are produced by using Rotation, Width shifting, Height shifting, Translation, Flipping, and Zooming techniques to increase the number of data.                     |You can share, copy and modify this dataset so long as you give appropriate credit, provide a link to the CC BY license, and indicate if changes were made, but you may not do so in a way that suggests the rights holder has endorsed you or your use of the dataset. Note that further permission may be required for any content within the dataset that is identified as belonging to a third party.                   |
+| Reference for the above      | Riadur Rashid, Mohammad ; Sharmin, Shayla ; Khatun, Tania; Hasan, Md Zahid; Shorif Uddin , Mohammad  (2024), “Eye Disease Image Dataset”, Mendeley Data, V1, doi: 10.17632/s9bfhswzjb.1                   |                   |
+| Base model 1                 |                    |                   |
+| etc                          |                    |                   |
 
 
 ### Summary of infrastructure requirements
@@ -100,6 +100,12 @@ and which optional "difficulty" points you are attempting. -->
 
 <!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which 
 optional "difficulty" points you are attempting. -->
+
+The data pipeline for this project is designed to support both offline and online workflows. The Eye Disease Image Dataset, consisting of 16,242 pre-augmented eye images, serves as the primary source of offline data. This dataset is treated as unstructured image data and is stored in a persistent storage provisioned on Chameleon. The persistent storage is mounted to the infrastructure as needed and is used to retain all relevant project artifacts, including datasets, model checkpoints, training logs, and container images that are not tracked in version control.
+
+The offline pipeline is implemented as an ETL (Extract, Transform, Load) process. It ingests the raw dataset, applies preprocessing operations such as image normalization, resizing, and format standardization, and loads the processed data into the storage backend in a format suitable for model training and evaluation. This ensures data consistency across training iterations and enables efficient reuse.
+
+In the online pipeline a streaming data simulation mechanism is implemented. A subset of the dataset is reserved for this purpose to ensure that simulation does not reuse data seen during training or validation and there is no data leakage. These simulation images are sent over time at fixed intervals, mimicking real-time data arrival patterns. The simulation pipeline applies the same preprocessing operations as the offline pipeline, ensuring consistency across inference modes. This real-time data is sent to the deployed model inference service and used to evaluate system behavior under live conditions. The setup enables comprehensive testing of model responsiveness, throughput, and performance monitoring, including the detection of drift and degradation.
 
 #### Continuous X
 

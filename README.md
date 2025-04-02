@@ -24,10 +24,10 @@ link to their contributions in all repos here. -->
 |
 | Shruti Bora                     |                                 |                                    |
 | Aryan Ajmera                    |                                 |                                    |
-| Vaibhav Rouduri                 | Persistent Storage, Offline     |                                    |
-|                                 | Data, Data Pipelines, Online    |                                    |
-|                                 | Data, Interactive Data          |                                    |
-|                                 | Dashboard                       |                                    | 
+| Vaibhav Rouduri                 | Persistent Storage, Offline Data, Data Pipelines, Online Data, Interactive Data Dashboard    |
+
+|
+
 ### System diagram
 
 ![System Diagram](System-Diagram.png)

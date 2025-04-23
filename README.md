@@ -10,10 +10,30 @@ In this setting, the system serves as a decision-support tool for ophthalmologis
 A dedicated section of the clinic can be used for image acquisition, where patients' retinal scans are captured and processed through the system. The model then outputs a list of the most probable diseases along with confidence scores for each prediction. These results assist ophthalmologists in making faster, more informed diagnostic decisions thereby enhancing clinical efficiency while maintaining expert oversight.
 
 #### Current Status Quo:
-Currently, the diagnosis of these diseases relies heavily on manual examination by specialists, a process that can be time-consuming and subjective. Even with advanced imaging technologies like fundus photography and OCT, the interpretation of these images demands significant expertise, often leading to delays in diagnosis. Our system aims to streamline this process, providing quick and consistent analysis to support clinicians in making informed decisions.
+<!--Currently, the diagnosis of these diseases relies heavily on manual examination by specialists, a process that can be time-consuming and subjective. Even with advanced imaging technologies like fundus photography and OCT, the interpretation of these images demands significant expertise, often leading to delays in diagnosis. Our system aims to streamline this process, providing quick and consistent analysis to support clinicians in making informed decisions. -->
+The clinic is a small private eye clinic run by one or two ophthalmologists. On average, they see about 20 to 30 patients each day. 
+
+Right now, there is no system to help with diagnosing diseases. The doctors look at the eye images themselves and make decisions based on what they see and the patient’s medical history. Everything is done manually.
+
+This takes time—usually around 5 to 10 minutes per patient. When the clinic gets busy, doctors may have even less time. There’s no one else to help check the images, and getting a second opinion is hard because the clinic has limited staff. Sometimes, if the diagnosis isn’t clear, patients have to come back for another visit.
+
+Although the clinic stores eye images digitally, there’s no software to help spot problems automatically. The whole process depends on the doctor’s experience and judgment, which can lead to delays or missed early signs of disease.
 
 #### Business Metric:
-The success of our system will be judged on its ability to improve the efficiency and accuracy of eye disease diagnosis. To quantify this, we'll focus on several key business metrics. First, we'll measure the reduction in "time to diagnosis," comparing the time taken to reach a diagnosis with our automated system versus the current manual process. Secondly, we'll assess the "diagnostic accuracy" by determining the concordance rate between our system's predictions and the gold standard diagnosis provided by ophthalmologists. We'll also examine the system's "sensitivity and specificity," ensuring it accurately identifies both positive and negative cases. Additionally, we'll track the "throughput" of our system, which refers to the number of images processed per unit time, to gauge its efficiency in a clinical setting. Finally, and perhaps most importantly, we will focus on the "reduction of false negatives". A false negative could have dire consequences for a patient, and reducing these instances is a paramount concern for our system’s success. By focusing on these metrics, we aim to demonstrate the tangible benefits of our machine learning system in improving patient care and clinical workflows.
+<!--The success of our system will be judged on its ability to improve the efficiency and accuracy of eye disease diagnosis. To quantify this, we'll focus on several key business metrics. First, we'll measure the reduction in "time to diagnosis," comparing the time taken to reach a diagnosis with our automated system versus the current manual process. Secondly, we'll assess the "diagnostic accuracy" by determining the concordance rate between our system's predictions and the gold standard diagnosis provided by ophthalmologists. We'll also examine the system's "sensitivity and specificity," ensuring it accurately identifies both positive and negative cases. Additionally, we'll track the "throughput" of our system, which refers to the number of images processed per unit time, to gauge its efficiency in a clinical setting. Finally, and perhaps most importantly, we will focus on the "reduction of false negatives". A false negative could have dire consequences for a patient, and reducing these instances is a paramount concern for our system’s success. By focusing on these metrics, we aim to demonstrate the tangible benefits of our machine learning system in improving patient care and clinical workflows.-->
+The success of our system depends on how well it improves the efficiency and accuracy of eye disease diagnosis within the setting of a small private eye clinic. These clinics often face challenges like time constraints, limited staff, and the need to process many patients each day. Our system directly improves this status quo by automating part of the diagnostic process and supporting the ophthalmologist with reliable, fast, and consistent results.
+
+We will measure our impact using several key business metrics:
+
+Reduction in Time to Diagnosis: Currently, doctors spend 5–10 minutes per patient analyzing retinal images. With our system, this time can be reduced significantly—allowing for quicker decision-making and freeing up time to see more patients or focus on complex cases.
+
+Improved Diagnostic Accuracy: By comparing the system’s predictions with the ophthalmologist’s final diagnosis, we aim to increase diagnostic confidence and reduce uncertainty, especially in borderline or early-stage cases.
+
+Sensitivity and Specificity: These metrics ensure that the system reliably detects diseases (true positives) and avoids incorrect alarms (false positives), supporting safe and trusted clinical use.
+
+Increased Throughput: Our model processes images rapidly—targeting under 200 milliseconds per image—allowing it to keep pace with the clinic’s daily flow and avoid backlogs.
+
+Reduction in False Negatives: Missing a disease can have serious consequences. Our system helps catch subtle signs that may be overlooked in a fast-paced clinic setting, ensuring that patients receive timely care and follow-up.
 
 ### Contributors
 

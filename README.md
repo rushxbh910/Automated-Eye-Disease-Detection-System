@@ -129,7 +129,7 @@ The offline pipeline is implemented as an ETL (Extract, Transform, Load) process
 
 In the online pipeline a streaming data simulation mechanism is implemented. A subset of the dataset is reserved for this purpose to ensure that simulation does not reuse data seen during training or validation and there is no data leakage. These simulation images are sent over time at fixed intervals, mimicking real-time data arrival patterns. The simulation pipeline applies the same preprocessing operations as the offline pipeline, ensuring consistency across inference modes. This real-time data is sent to the deployed model inference service and used to evaluate system behavior under live conditions. The setup enables comprehensive testing of model responsiveness, throughput, and performance monitoring, including the detection of drift and degradation.
 
-## Current Progress
+###### Current Progress
 
 - [x] VM provisioned on KVM@TACC using `python-chi`
 - [x] Object storage container created on CHI@TACC (`object-persist-project24`)
@@ -141,7 +141,7 @@ In the online pipeline a streaming data simulation mechanism is implemented. A s
 - [ ] Dockerized services (MLFlow, Jupyter, MinIO)
 - [ ] Monitoring + CI/CD
 
-## 🔧 Environment Setup (so far)
+###### 🔧 Environment Setup (so far)
 
 1. SSH into the VM:
    ```bash

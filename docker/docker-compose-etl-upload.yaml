@@ -1,0 +1,36 @@
+name: eye-etl
+
+volumes:
+  eye_data:
+
+services:
+  load-data:
+    container_name: etl_load_data
+    image: rclone/rclone:latest
+    volumes:
+      - eye_data:/data
+      - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "Uploading transformed EYE data to object store..."
+
+        if [ -z "$RCLONE_CONTAINER" ]; then
+          echo "ERROR: RCLONE_CONTAINER is not set"
+          exit 1
+        fi
+
+        # Optional: clean old contents
+        rclone delete chi_tacc:$RCLONE_CONTAINER --rmdirs || true
+
+        # Upload the data
+        rclone copy /data chi_tacc:$RCLONE_CONTAINER \
+          --progress \
+          --transfers=32 \
+          --checkers=16 \
+          --multi-thread-streams=4 \
+          --fast-list
+
+        echo "Upload complete. Contents:"
+        rclone lsd chi_tacc:$RCLONE_CONTAINER

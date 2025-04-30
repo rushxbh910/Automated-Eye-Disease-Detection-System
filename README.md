@@ -176,6 +176,20 @@ In the online pipeline a streaming data simulation mechanism is implemented. A s
    rclone lsd chi_tacc:
    ```
 
+6. **Docker ETL Upload (Minimal Version)**
+The file docker/docker-compose-etl-upload.yaml contains a minimal service that:
+
+Mounts preprocessed EYE dataset (~/transformed_data)
+
+Uploads it to Chameleon's object store under object-persist-project24
+
+To run:
+
+export RCLONE_CONTAINER=object-persist-project24
+docker compose -f docker/docker-compose-etl-upload.yaml run \
+  -v ~/transformed_data:/data:ro \
+  load-data
+
 #### Continuous X
 
 To ensure the robust and consistent operation of our system, we are implementing a comprehensive continuous integration and continuous deployment (CI/CD) strategy, leveraging the capabilities of GitHub Actions. Firstly, we will employ Infrastructure as Code (IaC) principles, utilizing Terraform to define and manage our cloud infrastructure. This approach allows for version control of our infrastructure configurations, ensuring reproducibility and consistency across environments. Containerization, facilitated by Docker, will be used to encapsulate all application services, promoting portability and simplifying deployment. A GitHub Actions workflow will automate the build, test, and deployment processes, minimizing manual intervention and reducing the potential for human error. We are adopting a microservices architecture to enhance modularity and scalability, enabling independent deployment and management of system components. Furthermore, an immutable infrastructure paradigm will be followed, where changes are implemented through updates to the Terraform configuration rather than direct modifications to deployed resources. All code and configuration artifacts will be managed via Git, providing a complete audit trail and facilitating collaboration.

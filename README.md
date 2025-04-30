@@ -129,66 +129,6 @@ The offline pipeline is implemented as an ETL (Extract, Transform, Load) process
 
 In the online pipeline a streaming data simulation mechanism is implemented. A subset of the dataset is reserved for this purpose to ensure that simulation does not reuse data seen during training or validation and there is no data leakage. These simulation images are sent over time at fixed intervals, mimicking real-time data arrival patterns. The simulation pipeline applies the same preprocessing operations as the offline pipeline, ensuring consistency across inference modes. This real-time data is sent to the deployed model inference service and used to evaluate system behavior under live conditions. The setup enables comprehensive testing of model responsiveness, throughput, and performance monitoring, including the detection of drift and degradation.
 
-###### Current Progress
-
-- [x] VM provisioned on KVM@TACC using `python-chi`
-- [x] Object storage container created on CHI@TACC (`object-persist-project24`)
-- [x] Dataset uploaded to the VM
-- [x] Installed `rclone` and configured access to CHI@TACC object store
-- [x] Verified object store access via `rclone lsd`
-- [ ] Dataset upload to object store (next step)
-- [ ] Model training pipeline
-- [ ] Dockerized services (MLFlow, Jupyter, MinIO)
-- [ ] Monitoring + CI/CD
-
-###### 🔧 Environment Setup (so far)
-
-1. SSH into the VM:
-   ```bash
-   ssh -i ~/.ssh/id_rsa_chameleon cc@<floating-IP>
-
-2. **Install rclone:**
-   ```
-   curl https://rclone.org/install.sh | sudo bash
-   ```
-
-3. **Modify FUSE permissions:**
-   ```
-   sudo sed -i '/^#user_allow_other/s/^#//' /etc/fuse.conf
-   ```
-
-4. **Create rclone.conf:**
-
-   File path: `~/.config/rclone/rclone.conf`
-
-   ```
-   [chi_tacc]
-   type = swift
-   user_id = YOUR_USER_ID
-   application_credential_id = YOUR_CRED_ID
-   application_credential_secret = YOUR_CRED_SECRET
-   auth = https://chi.tacc.chameleoncloud.org:5000/v3
-   region = CHI@TACC
-   ```
-
-5. **Test object store access:**
-   ```
-   rclone lsd chi_tacc:
-   ```
-
-6. **Docker ETL Upload (Minimal Version)**
-The file docker/docker-compose-etl-upload.yaml contains a minimal service that:
-
-Mounts preprocessed EYE dataset (~/transformed_data)
-
-Uploads it to Chameleon's object store under object-persist-project24
-
-To run:
-
-export RCLONE_CONTAINER=object-persist-project24
-docker compose -f docker/docker-compose-etl-upload.yaml run \
-  -v ~/transformed_data:/data:ro \
-  load-data
 
 #### Continuous X
 

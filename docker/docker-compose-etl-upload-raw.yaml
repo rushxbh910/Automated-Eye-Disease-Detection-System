@@ -1,0 +1,29 @@
+name: eye-raw-etl
+
+services:
+  load-raw-data:
+    container_name: etl_load_raw_data
+    image: rclone/rclone:latest
+    volumes:
+      - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "Uploading raw EYE dataset to object store..."
+
+        if [ -z "$RCLONE_CONTAINER" ]; then
+          echo "ERROR: RCLONE_CONTAINER is not set"
+          exit 1
+        fi
+
+        rclone copy /data chi_tacc:$RCLONE_CONTAINER/raw_eye_dataset \
+        --progress \
+        --transfers=32 \
+        --checkers=16 \
+        --multi-thread-streams=4 \
+        --fast-list
+
+        echo "Upload complete. Contents:"
+        rclone lsd chi_tacc:$RCLONE_CONTAINER
+

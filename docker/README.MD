@@ -1,5 +1,10 @@
 ###### 🔧 Environment Setup (so far)
 
+Transfer data to chameleon node:
+   ```
+   scp -i ~/.ssh/id_rsa_chameleon /Users/vaibhavrouduri/EYE/Artifacts/04_29_2025_18_35_39/data_ingestion/ingested/transformed_data.zip cc@129.114.27.186:/home/cc/
+   ```
+
 1. SSH into the VM:
    ```bash
    ssh -i ~/.ssh/id_rsa_chameleon cc@<floating-IP>

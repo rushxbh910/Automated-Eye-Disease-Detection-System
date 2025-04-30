@@ -67,3 +67,20 @@ docker compose -f docker/docker-compose-etl-upload-raw.yaml run \
   load-raw-data
 
 
+### For Teammates: How to Mount Object Store
+
+To access shared data on any VM, do the following:
+
+1. Copy your `rclone.conf` into `~/.config/rclone/rclone.conf`
+2. Run:
+    ```bash
+    sudo mkdir -p /mnt/object
+    sudo chown -R cc /mnt/object
+    sudo chgrp -R cc /mnt/object
+    rclone mount chi_tacc:object-persist-project24 /mnt/object --read-only --allow-other --daemon
+    ```
+
+Now your data will be available under `/mnt/object`, ready for training.
+
+
+

@@ -51,3 +51,19 @@ export RCLONE_CONTAINER=object-persist-project24
 docker compose -f docker/docker-compose-etl-upload.yaml run \
   -v ~/transformed_data:/data:ro \
   load-data
+
+7. **Docker ETL Upload: Raw EYE Dataset**
+The file docker/docker-compose-etl-upload-raw.yaml contains a minimal service that:
+
+Mounts the raw EYE dataset directory (~/original_dataset)
+
+Uploads its contents to Chameleon's object store under the container object-persist-project24
+
+To run:
+
+export RCLONE_CONTAINER=object-persist-project24
+docker compose -f docker/docker-compose-etl-upload-raw.yaml run \
+  -v ~/original_dataset:/data:ro \
+  load-raw-data
+
+

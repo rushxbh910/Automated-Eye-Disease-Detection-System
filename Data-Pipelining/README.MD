@@ -83,4 +83,38 @@ To access shared data on any VM, do the following:
 Now your data will be available under `/mnt/object`, ready for training.
 
 
+Block Storage Setup (Artifacts Persistence)
+Step 1: Format and Mount the Volume
+bash
+Copy
+Edit
+# Only needed the first time
+sudo parted -s /dev/vdb mklabel gpt
+sudo parted -s /dev/vdb mkpart primary ext4 0% 100%
+sudo mkfs.ext4 /dev/vdb1
 
+# Mount and configure
+sudo mkdir -p /mnt/block
+sudo mount /dev/vdb1 /mnt/block
+sudo chown -R cc /mnt/block
+sudo chgrp -R cc /mnt/block
+Step 2: Use /mnt/block to Store:
+Model checkpoints
+
+MLflow tracking logs
+
+Docker volumes (Postgres/MinIO)
+
+To verify:
+
+echo "Block storage test successful" > /mnt/block/test.txt
+cat /mnt/block/test.txt
+Handoff Summary for Teammates
+Training data: Available at /mnt/object
+
+Artifacts directory: Save anything persistent to /mnt/block
+
+To re-attach /mnt/block on new VMs:
+
+sudo mkdir -p /mnt/block
+sudo mount /dev/vdb1 /mnt/block

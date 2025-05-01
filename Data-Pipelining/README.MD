@@ -122,3 +122,42 @@ To re-attach /mnt/block on new VMs:
 
 sudo mkdir -p /mnt/block
 sudo mount /dev/vdb1 /mnt/block
+
+
+MLflow Infrastructure for Artifact Tracking
+We use MLflow for experiment tracking, running as a containerized service using Docker Compose. Artifacts (like trained models) are stored in MinIO (S3-compatible object storage), and metrics/params are logged to a PostgreSQL database — both backed by persistent block storage on Chameleon.
+
+🚀 Running the MLflow Infrastructure
+Make sure your block storage volume is already attached and mounted on /mnt/block.
+
+Then run:
+
+
+cd ~/eye-upload/mlflow-infra
+HOST_IP=$(curl --silent http://169.254.169.254/latest/meta-data/public-ipv4)
+docker compose -f docker-compose-block.yaml up -d
+🔍 Accessing the Services
+Once all services are up:
+
+MLflow Tracking UI → http://<your-floating-ip>:8000
+
+MinIO Console → http://<your-floating-ip>:9001
+
+Jupyter Notebook → http://<your-floating-ip>:8888
+
+Replace <your-floating-ip> with the actual public IP of your compute instance.
+
+File Structure
+Your docker-compose-block.yaml should already be located at:
+
+
+Data-Pipelining/docker-compose-block.yaml
+This sets up:
+
+postgres container (metrics and params)
+
+minio container (artifact storage)
+
+mlflow container (the MLflow tracking server)
+
+jupyter container (to run experiments using MLflow)

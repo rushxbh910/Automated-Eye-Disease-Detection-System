@@ -84,20 +84,22 @@ Now your data will be available under `/mnt/object`, ready for training.
 
 
 Block Storage Setup (Artifacts Persistence)
+
 Step 1: Format and Mount the Volume
-bash
-Copy
-Edit
-# Only needed the first time
+
+Only needed the first time (dont need to do it, already done)
+
 sudo parted -s /dev/vdb mklabel gpt
 sudo parted -s /dev/vdb mkpart primary ext4 0% 100%
 sudo mkfs.ext4 /dev/vdb1
 
-# Mount and configure
+Mount and configure
+
 sudo mkdir -p /mnt/block
 sudo mount /dev/vdb1 /mnt/block
 sudo chown -R cc /mnt/block
 sudo chgrp -R cc /mnt/block
+
 Step 2: Use /mnt/block to Store:
 Model checkpoints
 
@@ -105,10 +107,12 @@ MLflow tracking logs
 
 Docker volumes (Postgres/MinIO)
 
+
 To verify:
 
 echo "Block storage test successful" > /mnt/block/test.txt
 cat /mnt/block/test.txt
+
 Handoff Summary for Teammates
 Training data: Available at /mnt/object
 

@@ -1,0 +1,96 @@
+- hosts: all
+  become: true
+  tasks:
+    - name: Update apt & install Docker
+      apt:
+        name: [docker.io,docker-compose]
+        update_cache: true
+
+    - name: Add ubuntu to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+# Training service
+- hosts: train
+  become: true
+  tasks:
+    - community.docker.docker_container:
+        name: eye-train
+        image: ghcr.io/your-org/eye-train:latest
+        state: started
+        restart_policy: always
+        env:
+          MLFLOW_TRACKING_URI: "http://{{ hostvars['serve'][0].ansible_host }}:8000"
+
+# Inference service
+- hosts: serve
+  become: true
+  tasks:
+    - community.docker.docker_container:
+        name: eye-serve
+        image: ghcr.io/your-org/eye-serve:latest
+        published_ports: ["8080:8080"]
+        state: started
+        restart_policy: always
+
+# Monitoring stack
+- hosts: monitor
+  become: true
+  tasks:
+    - copy:
+        src: monitoring/
+        dest: /opt/monitoring/
+    - shell: docker-compose -f /opt/monitoring/docker-compose.yml up -d
+
+# Ray cluster
+- hosts: ray_head
+  become: true
+  tasks:
+    - shell: |
+        docker run -d --name ray-head --network host \
+          rayproject/ray:latest ray start --head
+
+- hosts: ray_workers
+  become: true
+  tasks:
+    - shell: |
+        docker run -d --name ray-worker --network host \
+          rayproject/ray:latest ray start --address \
+          {{ hostvars['ray_head'][0].ansible_host }}:6379
+
+# GitHub Actions self-hosted runner
+- hosts: runner
+  become: true
+  vars:
+    runner_version: "2.308.0"
+    repo_url: "https://github.com/YOUR_ORG/YOUR_REPO"
+    runner_token: "{{ lookup('env','RUNNER_TOKEN') }}"
+  tasks:
+    - apt:
+        name: [curl,tar,unzip]
+        update_cache: true
+    - file:
+        path: /home/ubuntu/actions-runner
+        state: directory
+        owner: ubuntu
+    - get_url:
+        url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
+        dest: /home/ubuntu/actions-runner/runner.tar.gz
+    - unarchive:
+        src: /home/ubuntu/actions-runner/runner.tar.gz
+        dest: /home/ubuntu/actions-runner
+        remote_src: yes
+    - shell: |
+        cd /home/ubuntu/actions-runner
+        ./config.sh --unattended \
+          --url {{ repo_url }} \
+          --token {{ runner_token }} \
+          --labels self-hosted,chameleon,linux,x64
+      args:
+        creates: /home/ubuntu/actions-runner/.runner
+    - shell: |
+        cd /home/ubuntu/actions-runner
+        sudo ./svc.sh install ubuntu
+        sudo ./svc.sh start

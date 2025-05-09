@@ -1,0 +1,22 @@
+---
+- name: Register Eye Staging App with ArgoCD
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Detect external IP of node1
+      set_fact:
+        external_ip: "{{ lookup('pipe', \"openstack floating ip list -f value -c 'Floating IP Address' | grep '^10.56'\") }}"
+
+    - name: Add staging app to ArgoCD
+      command: >
+        argocd app create eyeapp-staging
+        --repo https://github.com/your-org/eye-disease-detection
+        --path k8s/staging
+        --dest-namespace eye-staging
+        --dest-server https://kubernetes.default.svc
+        --directory-recurse
+        --helm-set-string externalIP="{{ external_ip }}"
+        --sync-policy automated
+      environment:
+        ARGOCD_OPTS: "--insecure"

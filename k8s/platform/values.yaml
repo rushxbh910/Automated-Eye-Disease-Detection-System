@@ -1,0 +1,8 @@
+minio:
+  externalIP: "REPLACEME"
+
+mlflow:
+  externalIP: "REPLACEME"
+
+postgres:
+  externalIP: "REPLACEME"

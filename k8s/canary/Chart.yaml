@@ -1,0 +1,4 @@
+apiVersion: v2
+name: eyeapp-canary
+description: Canary deployment of Eye Disease Detection App
+version: 0.1.0

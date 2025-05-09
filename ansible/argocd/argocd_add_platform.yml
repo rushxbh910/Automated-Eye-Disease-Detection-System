@@ -1,0 +1,24 @@
+---
+- name: Register Eye Platform Services with ArgoCD
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Detect external IP of node1 (assuming IPv4 starting with 10.56)
+      set_fact:
+        external_ip: "{{ lookup('pipe', \"openstack floating ip list -f value -c 'Floating IP Address' | grep '^10.56'\") }}"
+
+    - name: Add eye-platform namespace to ArgoCD
+      command: >
+        argocd app create eye-platform
+        --repo https://github.com/your-org/eye-disease-detection
+        --path k8s/platform
+        --dest-namespace eye-platform
+        --dest-server https://kubernetes.default.svc
+        --directory-recurse
+        --helm-set-string minio.externalIP="{{ external_ip }}"
+        --helm-set-string mlflow.externalIP="{{ external_ip }}"
+        --helm-set-string postgres.externalIP="{{ external_ip }}"
+        --sync-policy automated
+      environment:
+        ARGOCD_OPTS: "--insecure"

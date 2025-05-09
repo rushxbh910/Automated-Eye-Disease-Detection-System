@@ -1,0 +1,129 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: build-eye-container
+spec:
+  entrypoint: build-flow
+  arguments:
+    parameters:
+    - name: model-version
+
+  volumeClaimTemplates:
+  - metadata:
+      name: workdir
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 2Gi
+
+  templates:
+  - name: build-flow
+    steps:
+      - - name: clone-repo
+          template: git-clone
+      - - name: download-model
+          template: download-model
+          arguments:
+            parameters:
+            - name: model-version
+              value: "{{workflow.parameters.model-version}}"
+      - - name: kaniko-build
+          template: kaniko
+          arguments:
+            parameters:
+            - name: model-version
+              value: "{{workflow.parameters.model-version}}"
+      - - name: tag-mlflow
+          template: set-mlflow-alias
+          arguments:
+            parameters:
+            - name: model-version
+              value: "{{workflow.parameters.model-version}}"
+      - - name: deploy-to-staging
+          template: trigger-deploy
+          arguments:
+            parameters:
+            - name: model-version
+              value: "{{workflow.parameters.model-version}}"
+            - name: environment
+              value: "staging"
+
+  - name: git-clone
+    container:
+      image: alpine/git
+      command: [sh, -c]
+      args:
+        - git clone --branch workflow https://github.com/your-org/eye-disease-detection /mnt/workspace
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/workspace
+
+  - name: download-model
+    inputs:
+      parameters:
+      - name: model-version
+    container:
+      image: python:3.11-slim
+      command: [sh, -c]
+      args:
+        - |
+          pip install mlflow-skinny
+          export MLFLOW_TRACKING_URI=http://mlflow.eye-platform.svc.cluster.local:8000
+          mlflow artifacts download \
+            --artifact-uri models:/EyeDiseaseClassifier/{{inputs.parameters.model-version}} \
+            -d /tmp/mlflow_model
+          cp $(find /tmp/mlflow_model -name '*.pt' | head -n 1) /mnt/workspace/model.pt
+          echo "1.0.{{inputs.parameters.model-version}}" > /mnt/workspace/versions.txt
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/workspace
+
+  - name: kaniko
+    inputs:
+      parameters:
+      - name: model-version
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      args:
+        - --dockerfile=/mnt/workspace/Dockerfile
+        - --context=/mnt/workspace
+        - --destination=registry.kube-system.svc.cluster.local:5000/eyeapp:staging-1.0.{{inputs.parameters.model-version}}
+        - --insecure
+      volumeMounts:
+      - name: workdir
+        mountPath: /mnt/workspace
+
+  - name: set-mlflow-alias
+    inputs:
+      parameters:
+      - name: model-version
+    script:
+      image: python:3.11-slim
+      command: [sh, -c]
+      source: |
+        pip install mlflow-skinny
+        export MLFLOW_TRACKING_URI=http://mlflow.eye-platform.svc.cluster.local:8000
+        python -c "import mlflow; mlflow.tracking.MlflowClient().set_registered_model_alias(name='EyeDiseaseClassifier', alias='staging', version='{{inputs.parameters.model-version}}')"
+
+  - name: trigger-deploy
+    inputs:
+      parameters:
+      - name: model-version
+      - name: environment
+    resource:
+      action: create
+      manifest: |
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: deploy-eye-container-
+        spec:
+          workflowTemplateRef:
+            name: deploy-eye-container
+          arguments:
+            parameters:
+            - name: environment
+              value: "{{inputs.parameters.environment}}"
+            - name: model-version
+              value: "{{inputs.parameters.model-version}}"

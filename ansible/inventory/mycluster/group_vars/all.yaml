@@ -1,0 +1,8 @@
+# Inventory-wide configuration for Eye Diagnosis Cluster
+kube_version: v1.28.2
+kube_network_plugin: calico
+container_manager: docker
+helm_enabled: true
+metrics_server_enabled: true
+docker_insecure_registries:
+  - "registry.kube-system.svc.cluster.local:5000"

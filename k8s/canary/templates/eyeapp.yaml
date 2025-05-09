@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eyeapp
+  namespace: eye-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eyeapp
+  template:
+    metadata:
+      labels:
+        app: eyeapp
+    spec:
+      containers:
+      - name: eyeapp
+        image: registry.kube-system.svc.cluster.local:5000/eyeapp:staging-1.0.0
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /app/model
+          name: model-vol
+      volumes:
+      - name: model-vol
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eyeapp
+  namespace: eye-staging
+spec:
+  selector:
+    app: eyeapp
+  ports:
+  - port: 8081
+    targetPort: 8080
+  type: ClusterIP
+  externalIPs:
+    - {{ .Values.externalIP }}

@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: deploy-eye-container
+spec:
+  entrypoint: deploy
+  arguments:
+    parameters:
+    - name: environment
+    - name: model-version
+
+  templates:
+  - name: deploy
+    inputs:
+      parameters:
+      - name: environment
+      - name: model-version
+    container:
+      image: argoproj/argocd:latest
+      command: [sh, -c]
+      args:
+        - |
+          tag="{{inputs.parameters.environment}}-1.0.{{inputs.parameters.model-version}}"
+          app_name="eyeapp-{{inputs.parameters.environment}}"
+          argocd login argocd-server.argocd.svc.cluster.local --username admin --password "$ARGOCD_PASSWORD" --insecure
+          argocd app set "$app_name" --helm-set-string image.tag=$tag
+          argocd app sync "$app_name"
+      env:
+        - name: ARGOCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: argocd-initial-admin-secret
+              key: password

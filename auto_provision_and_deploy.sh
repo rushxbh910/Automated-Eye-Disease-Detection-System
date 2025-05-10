@@ -6,7 +6,7 @@ cd tf/
 terraform init
 
 echo "📦 [2/5] Applying Terraform configuration..."
-terraform apply -auto-approve
+terraform apply -auto-approve -var="nodes={\"node1\":\"training\",\"node2\":\"serving\"}"
 
 echo "🌐 [3/5] Extracting floating IPs..."
 TRAINING_IP=$(terraform output -raw training_floating_ip)

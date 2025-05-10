@@ -1,96 +1,53 @@
-- hosts: all
+- name: Common Setup on All Nodes
+  hosts: all
   become: true
   tasks:
-    - name: Update apt & install Docker
+    - name: Update apt packages
       apt:
-        name: [docker.io,docker-compose]
-        update_cache: true
+        update_cache: yes
+        cache_valid_time: 3600
 
-    - name: Add ubuntu to docker group
-      user:
-        name: ubuntu
-        groups: docker
-        append: true
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - python3
+        - python3-pip
+        - git
 
-# Training service
-- hosts: train
+# === TRAINING NODE SETUP ===
+- name: Setup and Run Model Trainer
+  hosts: training_node
   become: true
   tasks:
-    - community.docker.docker_container:
-        name: eye-train
-        image: ghcr.io/your-org/eye-train:latest
-        state: started
-        restart_policy: always
-        env:
-          MLFLOW_TRACKING_URI: "http://{{ hostvars['serve'][0].ansible_host }}:8000"
+    - name: Copy trainer code
+      copy:
+        src: ../trainer/
+        dest: /home/cc/trainer/
+        owner: cc
+        group: cc
+        mode: '0755'
 
-# Inference service
-- hosts: serve
-  become: true
-  tasks:
-    - community.docker.docker_container:
-        name: eye-serve
-        image: ghcr.io/your-org/eye-serve:latest
-        published_ports: ["8080:8080"]
-        state: started
-        restart_policy: always
-
-# Monitoring stack
-- hosts: monitor
-  become: true
-  tasks:
-    - copy:
-        src: monitoring/
-        dest: /opt/monitoring/
-    - shell: docker-compose -f /opt/monitoring/docker-compose.yml up -d
-
-# Ray cluster
-- hosts: ray_head
-  become: true
-  tasks:
-    - shell: |
-        docker run -d --name ray-head --network host \
-          rayproject/ray:latest ray start --head
-
-- hosts: ray_workers
-  become: true
-  tasks:
-    - shell: |
-        docker run -d --name ray-worker --network host \
-          rayproject/ray:latest ray start --address \
-          {{ hostvars['ray_head'][0].ansible_host }}:6379
-
-# GitHub Actions self-hosted runner
-- hosts: runner
-  become: true
-  vars:
-    runner_version: "2.308.0"
-    repo_url: "https://github.com/YOUR_ORG/YOUR_REPO"
-    runner_token: "{{ lookup('env','RUNNER_TOKEN') }}"
-  tasks:
-    - apt:
-        name: [curl,tar,unzip]
-        update_cache: true
-    - file:
-        path: /home/ubuntu/actions-runner
-        state: directory
-        owner: ubuntu
-    - get_url:
-        url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
-        dest: /home/ubuntu/actions-runner/runner.tar.gz
-    - unarchive:
-        src: /home/ubuntu/actions-runner/runner.tar.gz
-        dest: /home/ubuntu/actions-runner
-        remote_src: yes
-    - shell: |
-        cd /home/ubuntu/actions-runner
-        ./config.sh --unattended \
-          --url {{ repo_url }} \
-          --token {{ runner_token }} \
-          --labels self-hosted,chameleon,linux,x64
+    - name: Run training script
+      shell: bash /home/cc/trainer/run_training.sh
       args:
-        creates: /home/ubuntu/actions-runner/.runner
-    - shell: |
-        cd /home/ubuntu/actions-runner
-        sudo ./svc.sh install ubuntu
-        sudo ./svc.sh start
+        chdir: /home/cc/trainer/
+
+# === SERVING NODE SETUP ===
+- name: Setup and Run Model Server
+  hosts: serving_node
+  become: true
+  tasks:
+    - name: Copy server code
+      copy:
+        src: ../server/
+        dest: /home/cc/server/
+        owner: cc
+        group: cc
+        mode: '0755'
+
+    - name: Run server script
+      shell: bash /home/cc/server/run_server.sh
+      args:
+        chdir: /home/cc/server/

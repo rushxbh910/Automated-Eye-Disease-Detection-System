@@ -1,11 +1,9 @@
 all:
+  vars:
+    ansible_user: cc
+    ansible_ssh_private_key_file: ~/.ssh/project_24.pem
   hosts:
-    node1:
-      ansible_host: 192.168.1.11
-      ansible_user: cc
-    node2:
-      ansible_host: 192.168.1.12
-      ansible_user: cc
-    node3:
-      ansible_host: 192.168.1.13
-      ansible_user: cc
+    training_node:
+      ansible_host: "{{ training_floating_ip }}"
+    serving_node:
+      ansible_host: "{{ serving_floating_ip }}"

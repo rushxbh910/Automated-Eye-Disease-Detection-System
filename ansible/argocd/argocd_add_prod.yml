@@ -1,22 +1,13 @@
----
-- name: Register Eye Production App with ArgoCD
+- name: Register ArgoCD application: production
   hosts: localhost
-  gather_facts: no
-
   tasks:
-    - name: Detect external IP of node1
-      set_fact:
-        external_ip: "{{ lookup('pipe', \"openstack floating ip list -f value -c 'Floating IP Address' | grep '^10.56'\") }}"
-
-    - name: Add production app to ArgoCD
-      command: >
-        argocd app create eyeapp-production
-        --repo https://github.com/your-org/eye-disease-detection
-        --path k8s/production
-        --dest-namespace eye-production
-        --dest-server https://kubernetes.default.svc
-        --directory-recurse
-        --helm-set-string externalIP="{{ external_ip }}"
-        --sync-policy automated
-      environment:
-        ARGOCD_OPTS: "--insecure"
+    - name: Create production app in ArgoCD
+      shell: |
+        argocd app create production \
+          --repo https://github.com/rushxbh910/Automated-Eye-Disease-Detection-System.git \
+          --path k8s/production \
+          --dest-server https://kubernetes.default.svc \
+          --dest-namespace gourmetgram-production \
+          --directory-recurse \
+          --upsert \
+          --yes

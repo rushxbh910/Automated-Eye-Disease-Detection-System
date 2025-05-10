@@ -1,8 +1,9 @@
 provider "openstack" {
-  cloud = "chi"
+  alias       = "chi"
+  cloud       = "chi"
 }
 
 provider "openstack" {
-  cloud = "kvm"
-  alias = "kvm"
+  alias       = "kvm"
+  cloud       = "kvm"
 }

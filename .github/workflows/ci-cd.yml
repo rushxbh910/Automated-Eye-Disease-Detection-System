@@ -1,0 +1,79 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1'   # weekly retrain trigger
+
+jobs:
+  lint-and-test:
+    runs-on: [ self-hosted, chameleon, linux, x64 ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with: python-version: '3.9'
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+
+  build-and-push:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: [ self-hosted, chameleon, linux, x64 ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push training image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker
+          file:    ./docker/Dockerfile.train
+          push:    true
+          tags:    ghcr.io/${{ github.repository_owner }}/eye-train:latest
+      - name: Build & push serving image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker
+          file:    ./docker/Dockerfile.serve
+          push:    true
+          tags:    ghcr.io/${{ github.repository_owner }}/eye-serve:latest
+
+  deploy:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: [ self-hosted, chameleon, linux, x64 ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve \
+            -var="project_id=${{ secrets.PROJECT_ID }}" \
+            -var="ssh_key=${{ secrets.SSH_KEY }}"
+      - name: Generate Ansible inventory
+        run: |
+          cat <<EOF > ansible/hosts.ini
+          [train]
+          ${{ steps.deploy.outputs.training_ip }}
+          [serve]
+          ${{ steps.deploy.outputs.serve_ip }}
+          [monitor]
+          ${{ steps.deploy.outputs.monitor_ip }}
+          [ray_head]
+          ${{ steps.deploy.outputs.ray_head_ip }}
+          [ray_workers]
+          ${{ steps.deploy.outputs.ray_worker_ips }}
+          [runner]
+          ${{ steps.deploy.outputs.runner_ip }}
+          EOF
+      - name: Run Ansible playbook
+        run: ansible-playbook -i ansible/hosts.ini ansible/playbook.yml

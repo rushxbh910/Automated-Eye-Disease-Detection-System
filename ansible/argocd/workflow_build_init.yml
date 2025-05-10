@@ -1,0 +1,13 @@
+---
+- name: Trigger One-Time Initial Container Image Build for Eye App
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Trigger initial image build via Argo Workflows
+      command: >
+        argo submit --watch
+        --namespace argo
+        --serviceaccount argo
+        --generate-name kaniko-eye-initial-
+        -f /workflows/build-initial.yaml

@@ -1,0 +1,77 @@
+name: eye-etl
+
+volumes:
+  eye_data:
+
+services:
+  extract-data:
+    container_name: etl_extract_eye_data
+    image: python:3.11
+    user: root
+    volumes:
+      - eye_data:/data
+      - /mnt/object:/mnt/object:ro  # Mounted object store (read-only)
+    working_dir: /data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+
+        echo "Resetting local dataset directory..."
+        rm -rf raw_eye_dataset
+        mkdir -p raw_eye_dataset
+
+        echo "Copying raw data from mounted object store to container volume..."
+        cp -r /mnt/object/raw_eye_dataset/* raw_eye_dataset/
+
+        echo "Contents of /data after extract stage:"
+        ls -l /data/raw_eye_dataset
+
+  transform-data:
+    container_name: etl_transform_data
+    image: python:3.11
+    user: root
+    volumes:
+      - eye_data:/data
+      - ./scripts/transform.py:/data/transform.py:ro
+    working_dir: /data
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Python dependencies..."
+        pip install torch torchvision scikit-learn --break-system-packages
+
+        echo "Running transform.py..."
+        python3 transform.py
+
+        echo "Listing contents of /data after transform:"
+        ls -l /data
+
+  load-transformed-data:
+    container_name: etl_load_transformed_data
+    image: rclone/rclone:latest
+    volumes:
+      - eye_data:/data
+      - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        if [ -z "$RCLONE_CONTAINER" ]; then
+          echo "ERROR: RCLONE_CONTAINER is not set"
+          exit 1
+        fi
+
+        echo "Uploading transformed dataset to object store..."
+
+        rclone copy /data/processed chi_tacc:$RCLONE_CONTAINER/transformed_eye_dataset \
+          --progress \
+          --transfers=32 \
+          --checkers=16 \
+          --multi-thread-streams=4 \
+          --fast-list
+
+        echo "Upload complete. Listing remote contents:"
+        rclone lsd chi_tacc:$RCLONE_CONTAINER/transformed_eye_dataset

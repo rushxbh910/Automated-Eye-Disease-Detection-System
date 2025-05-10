@@ -1,31 +1,23 @@
-
-variable "chameleon_endpoint" {
-  default = "https://chi.tacc.chameleoncloud.org:5000/v3"
-}
-
-variable "region" {
-  default = "CHI@TACC"
+variable "suffix" {
+  description = "Project or user suffix for resource naming"
+  type        = string
 }
 
 variable "key" {
-  description = "SSH Key pair name"
+  description = "SSH key pair name"
   type        = string
-  default     = "project_24"
-}
-
-variable "suffix" {
-  description = "Unique identifier (e.g. your ProjectID)"
-  default     = "project_24"
 }
 
 variable "nodes" {
-  description = "Map of training nodes"
+  description = "Map of training node(s) and their configuration"
   type = map(object({
+    role   = string
     flavor = string
   }))
 }
 
 variable "model_serving_flavor" {
+  description = "Flavor name for model serving node"
+  type        = string
   default     = "m1.large"
-  description = "Flavor for serving node on KVM"
 }

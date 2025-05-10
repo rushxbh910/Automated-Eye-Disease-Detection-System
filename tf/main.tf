@@ -1,23 +1,34 @@
+provider "openstack" {
+  alias = "chi"
+  cloud = "chi"
+}
 
-resource "openstack_compute_instance_v2" "training_nodes" {
+provider "openstack" {
+  alias = "kvm"
+  cloud = "kvm"
+}
+
+locals {
+  training_node = var.nodes["node1"]
+}
+
+resource "openstack_compute_instance_v2" "training_node" {
   provider        = openstack.chi
-  for_each        = var.nodes
-  name            = "eye-train-${each.key}-${var.suffix}"
-  flavor_name     = each.value.flavor
+  name            = "eye-train-node1-${var.suffix}"
+  flavor_name     = local.training_node.flavor
   key_pair        = var.key
   image_id        = data.openstack_images_image_v2.ubuntu.id
 
   network {
-    port = openstack_networking_port_v2.training_ports[each.key].id
+    port = openstack_networking_port_v2.training_port.id
   }
 
   security_groups = ["default", "eye-secgroup-${var.suffix}"]
 }
 
-resource "openstack_networking_port_v2" "training_ports" {
+resource "openstack_networking_port_v2" "training_port" {
   provider   = openstack.chi
-  for_each   = var.nodes
-  name       = "eye-train-port-${each.key}-${var.suffix}"
+  name       = "eye-train-port-node1-${var.suffix}"
   network_id = data.openstack_networking_network_v2.sharednet1.id
 
   fixed_ip {
@@ -38,7 +49,7 @@ resource "openstack_networking_floatingip_v2" "training_fip" {
 resource "openstack_networking_floatingip_associate_v2" "training_fip_assoc" {
   provider    = openstack.chi
   floating_ip = openstack_networking_floatingip_v2.training_fip.address
-  port_id     = openstack_networking_port_v2.training_ports["node1"].id
+  port_id     = openstack_networking_port_v2.training_port.id
 }
 
 resource "openstack_compute_instance_v2" "serving_node" {

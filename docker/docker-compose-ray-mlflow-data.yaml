@@ -5,6 +5,8 @@ services:
     image: python:3.11
     volumes:
       - EYE:/data
+      - /mnt/object/raw_eye_dataset:/source_data:ro  # Mounting dataset folder from object (read-only)
+
     working_dir: /data
     command:
       - bash

@@ -1,13 +1,3 @@
-provider "openstack" {
-  alias = "chi"
-  cloud = "chi"
-}
-
-provider "openstack" {
-  alias = "kvm"
-  cloud = "kvm"
-}
-
 locals {
   training_node = var.nodes["node1"]
 }

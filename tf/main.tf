@@ -3,7 +3,9 @@ locals {
   serving_node  = var.nodes["serve-1"]
 }
 
-# Training node (KVM@TACC)
+# --------------------
+# KVM@TACC - Training Node
+# --------------------
 resource "openstack_compute_instance_v2" "training_node" {
   provider     = openstack.kvm
   name         = "eye-train-train-1-${var.suffix}"
@@ -18,15 +20,9 @@ resource "openstack_compute_instance_v2" "training_node" {
   user_data = file("scripts/user_data.sh")
 }
 
-# Training volume (already exists, attach only)
-resource "openstack_compute_volume_attach_v2" "training_attach" {
-  provider   = openstack.kvm
-  instance_id = openstack_compute_instance_v2.training_node.id
-  volume_id   = var.training_volume_id
-  device      = "/dev/vdb"
-}
-
-# Serving node (KVM@TACC)
+# --------------------
+# KVM@TACC - Serving Node
+# --------------------
 resource "openstack_compute_instance_v2" "serving_node" {
   provider        = openstack.kvm
   name            = "eye-serve-serve-1-${var.suffix}"
@@ -38,7 +34,10 @@ resource "openstack_compute_instance_v2" "serving_node" {
     port = openstack_networking_port_v2.serving_port.id
   }
 
-  security_groups = ["default", "eye-secgroup-${var.suffix}"]
+  security_groups = [
+    data.openstack_networking_secgroup_v2.default.name,
+    openstack_networking_secgroup_v2.eye_secgroup.id
+  ]
 }
 
 resource "openstack_networking_port_v2" "serving_port" {
@@ -56,17 +55,9 @@ resource "openstack_networking_port_v2" "serving_port" {
   ]
 }
 
-resource "openstack_networking_floatingip_v2" "serving_fip" {
-  provider = openstack.kvm
-  pool     = "public"
-}
-
-resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
-  provider    = openstack.kvm
-  floating_ip = openstack_networking_floatingip_v2.serving_fip.address
-  port_id     = openstack_networking_port_v2.serving_port.id
-}
-
+# --------------------
+# Security Group for Serving Node
+# --------------------
 resource "openstack_networking_secgroup_v2" "eye_secgroup" {
   provider = openstack.kvm
   name     = "eye-secgroup-${var.suffix}"
@@ -83,3 +74,24 @@ resource "openstack_networking_secgroup_rule_v2" "inbound" {
   remote_ip_prefix  = "0.0.0.0/0"
   security_group_id = openstack_networking_secgroup_v2.eye_secgroup.id
 }
+
+# --------------------
+# Security Group Data Source
+# --------------------
+data "openstack_networking_secgroup_v2" "default" {
+  name = "default"
+}
+
+# --------------------
+# Commented out Floating IPs (optional if pool is exhausted)
+# --------------------
+# resource "openstack_networking_floatingip_v2" "serving_fip" {
+#   provider = openstack.kvm
+#   pool     = "public"
+# }
+
+# resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
+#   provider    = openstack.kvm
+#   floating_ip = openstack_networking_floatingip_v2.serving_fip.address
+#   port_id     = openstack_networking_port_v2.serving_port.id
+# }

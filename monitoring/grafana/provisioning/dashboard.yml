@@ -1,0 +1,100 @@
+{
+  "id": null,
+  "title": "Eye Disease Monitoring",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "API Latency (ms)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(inference_latency_seconds_sum[1m]) / rate(inference_latency_seconds_count[1m]) * 1000",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Prediction Count",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "increase(predictions_total[5m])",
+          "refId": "B"
+        }
+      ],
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Avg Confidence",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "avg_over_time(model_confidence_score[5m])",
+          "refId": "C"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 4, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Drift Alert",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "max_over_time(drift_alert[5m])",
+          "refId": "D"
+        }
+      ],
+      "gridPos": { "x": 6, "y": 4, "w": 6, "h": 4 },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "green", "value": 0 },
+          { "color": "red", "value": 1 }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [ "last" ]
+        },
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "alert": {
+        "name": "Drift Alert Trigger",
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [0.5],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [ "D" ]
+            },
+            "reducer": {
+              "type": "max"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "noDataState": "no_data",
+        "frequency": "30s",
+        "handler": 1,
+        "notifications": []
+      }
+    }
+  ]
+}

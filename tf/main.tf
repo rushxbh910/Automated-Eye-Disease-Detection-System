@@ -3,20 +3,40 @@ locals {
   serving_node  = var.nodes["serve-1"]
 }
 
-# CHI@UC - Bare metal training node (no ports, no secgroups)
+# --------------------
+# KVM@TACC - Training Node (VM with volume attached)
+# --------------------
 resource "openstack_compute_instance_v2" "training_node" {
-  provider     = openstack.uc
-  name         = "eye-train-train-1-${var.suffix}"
-  flavor_name  = local.training_node.flavor
-  key_pair     = var.key
-  image_id     = data.openstack_images_image_v2.ubuntu.id
+  provider        = openstack.kvm
+  name            = "eye-train-train-1-${var.suffix}"
+  flavor_name     = local.training_node.flavor
+  key_pair        = var.key
+  image_id        = data.openstack_images_image_v2.ubuntu.id
+  user_data       = file("scripts/user_data_mount.sh") # Mount script (create this file)
 
   network {
     name = "sharednet1"
   }
+
+  security_groups = ["default"]
 }
 
-# KVM@TACC - Serving node (VM with ports and security groups)
+resource "openstack_blockstorage_volume_v3" "training_volume" {
+  provider = openstack.kvm
+  name     = "block-persist-project24"
+  volume_id = var.training_volume_id
+}
+
+resource "openstack_compute_volume_attach_v2" "training_volume_attach" {
+  provider    = openstack.kvm
+  instance_id = openstack_compute_instance_v2.training_node.id
+  volume_id   = openstack_blockstorage_volume_v3.training_volume.id
+  device      = "/dev/vdb"
+}
+
+# --------------------
+# KVM@TACC - Serving Node
+# --------------------
 resource "openstack_compute_instance_v2" "serving_node" {
   provider        = openstack.kvm
   name            = "eye-serve-serve-1-${var.suffix}"
@@ -57,6 +77,9 @@ resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
   port_id     = openstack_networking_port_v2.serving_port.id
 }
 
+# --------------------
+# Security Group (KVM)
+# --------------------
 resource "openstack_networking_secgroup_v2" "eye_secgroup" {
   provider = openstack.kvm
   name     = "eye-secgroup-${var.suffix}"

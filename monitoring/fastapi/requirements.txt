@@ -11,3 +11,4 @@ prometheus-client==0.20.0
 torchvision
 boto3
 torch
+requests

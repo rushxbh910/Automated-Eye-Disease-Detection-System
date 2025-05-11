@@ -45,7 +45,7 @@ def get_model_mobilenetv3(num_classes, freeze_layers=True):
     return model.to(device)
 
 model_path = "MobileNetV3.pth"
-num_classes = 10
+num_classes = 15
 model = get_model_mobilenetv3(num_classes)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
@@ -61,8 +61,14 @@ class_map = {
     6: "Myopia",
     7: "Pterygium",
     8: "Retinal Detachment",
-    9: "Retinitis Pigmentosa"
+    9: "Retinitis Pigmentosa",
+    10: "Unused-Class-10",
+    11: "Unused-Class-11",
+    12: "Unused-Class-12",
+    13: "Unused-Class-13",
+    14: "Unused-Class-14"
 }
+
 
 # === Preprocessing ===
 transform = transforms.Compose([

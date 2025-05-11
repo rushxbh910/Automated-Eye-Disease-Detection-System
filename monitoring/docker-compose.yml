@@ -1,19 +1,12 @@
-version: "3.8"
-
 services:
+
   fastapi:
-    build:
-      context: ../model_serving
-      dockerfile: Dockerfile
-    container_name: eye-disease-api
+    build: ./fastapi
+    container_name: eye-fastapi
     ports:
       - "8000:8000"
-    environment:
-      - MINIO_URL=http://minio:9000
-      - MINIO_USER=your-access-key
-      - MINIO_PASSWORD=your-secret-key
     volumes:
-      - ../resnet50_custom_model.onnx:/app/resnet50_custom_model.onnx
+      - ../../resnet50_custom_model.onnx:/app/resnet50_custom_model.onnx
     networks:
       - monitor-net
 
@@ -24,21 +17,38 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    networks:
+      - monitor-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
     networks:
       - monitor-net
 
   minio:
     image: minio/minio
     container_name: minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: your-access-key
-      MINIO_ROOT_PASSWORD: your-secret-key
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio-data:/data
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=your-access-key
+      - MINIO_ROOT_PASSWORD=your-secret-key
+    command: server /data --console-address ":9001"
     networks:
       - monitor-net
 
@@ -67,25 +77,8 @@ services:
     networks:
       - monitor-net
 
-  # airflow:
-  #   image: apache/airflow:2.7.3
-  #   ports:
-  #     - "8081:8080"
-  #   environment:
-  #     - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
-  #     - AIRFLOW__CORE__FERNET_KEY=YOUR_KEY
-  #     - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
-  #     - AIRFLOW__CORE__LOAD_EXAMPLES=False
-  #   volumes:
-  #     - ./dags:/opt/airflow/dags
-  #     - ./logs:/opt/airflow/logs
-  #     - ./plugins:/opt/airflow/plugins
-  #   command: standalone
-  #   networks:
-  #     - monitor-net
-
 networks:
   monitor-net:
 
 volumes:
-  minio-data:
+  minio_data:

@@ -78,9 +78,7 @@ resource "openstack_networking_secgroup_rule_v2" "inbound" {
 # --------------------
 # Security Group Data Source
 # --------------------
-data "openstack_networking_secgroup_v2" "default" {
-  name = "default"
-}
+
 
 # --------------------
 # Commented out Floating IPs (optional if pool is exhausted)

@@ -8,8 +8,9 @@ import torchvision.transforms as transforms
 from torchvision import models
 from torchvision.models import MobileNet_V3_Large_Weights
 import time
-import numpy as np
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from minio import Minio
+from datetime import datetime
 
 app = FastAPI()
 
@@ -33,9 +34,6 @@ def get_model_mobilenetv3(num_classes, freeze_layers=True):
             if idx < total_blocks - 2:
                 for param in module.parameters():
                     param.requires_grad = False
-            else:
-                for param in module.parameters():
-                    param.requires_grad = True
     model.classifier = nn.Sequential(
         nn.Linear(model.classifier[0].in_features, 512),
         nn.ReLU(),
@@ -69,7 +67,6 @@ class_map = {
     14: "Unused-Class-14"
 }
 
-
 # === Preprocessing ===
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -77,12 +74,24 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
+# === MinIO Setup ===
+minio_client = Minio(
+    "minio:9000",
+    access_key="your-access-key",
+    secret_key="your-secret-key",
+    secure=False
+)
+bucket_name = "misclassified"
+if not minio_client.bucket_exists(bucket_name):
+    minio_client.make_bucket(bucket_name)
+
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...), true_label: int = 0):  # ground truth for testing
     global low_confidence_streak
     try:
         start = time.time()
-        image = Image.open(io.BytesIO(await file.read())).convert("RGB")
+        image_bytes = await file.read()
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         input_tensor = transform(image).unsqueeze(0).to(device)
 
         with torch.no_grad():
@@ -102,6 +111,17 @@ async def predict(file: UploadFile = File(...)):
         else:
             low_confidence_streak = 0
             DRIFT_ALERT.set(0)
+
+        # Save if misclassified
+        if pred != true_label:
+            filename = f"{datetime.utcnow().isoformat()}_{file.filename}"
+            minio_client.put_object(
+                bucket_name,
+                filename,
+                io.BytesIO(image_bytes),
+                length=len(image_bytes),
+                content_type="image/jpeg"
+            )
 
         return JSONResponse({
             "predicted_class": class_map[pred],

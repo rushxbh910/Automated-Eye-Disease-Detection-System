@@ -13,3 +13,4 @@ boto3
 torch
 requests
 minio
+mlflow==2.12.1

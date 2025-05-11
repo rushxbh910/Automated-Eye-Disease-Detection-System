@@ -3,8 +3,7 @@ import sys
 import torch
 import traceback
 from torchvision.models import resnet
-from src.logging.logger import logging
-from src.exception.NetworkSecurityException import NetworkSecurityException
+import logging
 
 def export_pytorch_to_onnx(model_path: str = None, export_dir: str = None):
     """
@@ -52,4 +51,4 @@ def export_pytorch_to_onnx(model_path: str = None, export_dir: str = None):
 
     except Exception as e:
         logging.error(f"❌ ONNX export failed: {traceback.format_exc()}")
-        raise NetworkSecurityException(e, sys)
+        raise Exception(e, sys)

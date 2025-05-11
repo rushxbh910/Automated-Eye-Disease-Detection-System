@@ -3,11 +3,8 @@ locals {
   serving_node  = var.nodes["serve-1"]
 }
 
-# --------------------
-# CHI@TACC: Training Node (Bare Metal - No Security Groups)
-# --------------------
 resource "openstack_compute_instance_v2" "training_node" {
-  provider        = openstack.chi
+  provider        = openstack.kvm
   name            = "eye-train-train-1-${var.suffix}"
   flavor_name     = local.training_node.flavor
   key_pair        = var.key
@@ -17,11 +14,11 @@ resource "openstack_compute_instance_v2" "training_node" {
     port = openstack_networking_port_v2.training_port.id
   }
 
-  # ❌ No security_groups allowed on CHI@TACC
+  security_groups = ["default", "eye-secgroup-${var.suffix}"]
 }
 
 resource "openstack_networking_port_v2" "training_port" {
-  provider   = openstack.chi
+  provider   = openstack.kvm
   name       = "eye-train-port-train-1-${var.suffix}"
   network_id = data.openstack_networking_network_v2.sharednet1.id
 
@@ -29,23 +26,23 @@ resource "openstack_networking_port_v2" "training_port" {
     subnet_id = data.openstack_networking_subnet_v2.sharednet1_subnet.id
   }
 
-  # ❌ No security_group_ids on CHI@TACC
+  security_group_ids = [
+    data.openstack_networking_secgroup_v2.default.id,
+    openstack_networking_secgroup_v2.eye_secgroup.id
+  ]
 }
 
 resource "openstack_networking_floatingip_v2" "training_fip" {
-  provider = openstack.chi
+  provider = openstack.kvm
   pool     = "public"
 }
 
 resource "openstack_networking_floatingip_associate_v2" "training_fip_assoc" {
-  provider    = openstack.chi
+  provider    = openstack.kvm
   floating_ip = openstack_networking_floatingip_v2.training_fip.address
   port_id     = openstack_networking_port_v2.training_port.id
 }
 
-# --------------------
-# KVM@TACC: Serving Node (VM - Security Groups Allowed)
-# --------------------
 resource "openstack_compute_instance_v2" "serving_node" {
   provider        = openstack.kvm
   name            = "eye-serve-serve-1-${var.suffix}"
@@ -86,9 +83,6 @@ resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
   port_id     = openstack_networking_port_v2.serving_port.id
 }
 
-# --------------------
-# Security Group (Only needed for KVM)
-# --------------------
 resource "openstack_networking_secgroup_v2" "eye_secgroup" {
   provider = openstack.kvm
   name     = "eye-secgroup-${var.suffix}"

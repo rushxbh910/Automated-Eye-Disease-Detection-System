@@ -15,7 +15,7 @@ resource "openstack_compute_instance_v2" "training_node" {
     name = "sharednet1"
   }
 
-  user_data = file("scripts/user_data_mount.sh")
+  user_data = file("scripts/user_data.sh")
 }
 
 # Training volume (already exists, attach only)

@@ -82,13 +82,3 @@ resource "openstack_networking_secgroup_rule_v2" "inbound" {
   remote_ip_prefix  = "0.0.0.0/0"
   security_group_id = openstack_networking_secgroup_v2.eye_secgroup.id
 }
-
-provider "openstack" {
-  alias = "chi"
-  cloud = "chi"
-}
-
-provider "openstack" {
-  alias = "kvm"
-  cloud = "kvm"
-}

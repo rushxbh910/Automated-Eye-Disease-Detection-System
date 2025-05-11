@@ -1,12 +1,7 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s
 
 scrape_configs:
-  - job_name: 'eye_serve'
+  - job_name: 'fastapi'
     static_configs:
-      - targets: ['${SERVE_IP}:8080']
-    metrics_path: /metrics
-
-  - job_name: 'node_exporter'
-    static_configs:
-      - targets: ['${MONITOR_IP}:9100']
+      - targets: ['fastapi:8000']

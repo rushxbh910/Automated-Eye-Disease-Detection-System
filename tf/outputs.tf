@@ -7,7 +7,7 @@ output "serving_floating_ip" {
 }
 
 output "training_node_name" {
-  value = openstack_compute_instance_v2.training_nodes["node1"].name
+  value = openstack_compute_instance_v2.training_node.name
 }
 
 output "serving_node_name" {

@@ -1,10 +1,11 @@
 locals {
-  training_node = var.nodes["node1"]
+  training_node = var.nodes["train-1"]
+  serving_node  = var.nodes["serve-1"]
 }
 
 resource "openstack_compute_instance_v2" "training_node" {
   provider        = openstack.chi
-  name            = "eye-train-node1-${var.suffix}"
+  name            = "eye-train-train-1-${var.suffix}"
   flavor_name     = local.training_node.flavor
   key_pair        = var.key
   image_id        = data.openstack_images_image_v2.ubuntu.id
@@ -18,7 +19,7 @@ resource "openstack_compute_instance_v2" "training_node" {
 
 resource "openstack_networking_port_v2" "training_port" {
   provider   = openstack.chi
-  name       = "eye-train-port-node1-${var.suffix}"
+  name       = "eye-train-port-train-1-${var.suffix}"
   network_id = data.openstack_networking_network_v2.sharednet1.id
 
   fixed_ip {
@@ -44,8 +45,8 @@ resource "openstack_networking_floatingip_associate_v2" "training_fip_assoc" {
 
 resource "openstack_compute_instance_v2" "serving_node" {
   provider        = openstack.kvm
-  name            = "eye-serve-${var.suffix}"
-  flavor_name     = var.model_serving_flavor
+  name            = "eye-serve-serve-1-${var.suffix}"
+  flavor_name     = local.serving_node.flavor
   key_pair        = var.key
   image_id        = data.openstack_images_image_v2.ubuntu.id
 
@@ -58,7 +59,7 @@ resource "openstack_compute_instance_v2" "serving_node" {
 
 resource "openstack_networking_port_v2" "serving_port" {
   provider   = openstack.kvm
-  name       = "eye-serve-port-${var.suffix}"
+  name       = "eye-serve-port-serve-1-${var.suffix}"
   network_id = data.openstack_networking_network_v2.sharednet1.id
 
   fixed_ip {

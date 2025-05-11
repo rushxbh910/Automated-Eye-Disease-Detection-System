@@ -2,12 +2,9 @@ FROM python:3.10
 
 WORKDIR /app
 
-# Copy FastAPI app
-COPY ./fastapi_app.py .
-
-# Copy requirements from root
-COPY ../requirements.txt .
-
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["uvicorn", "fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY fast_api.py .
+
+CMD ["uvicorn", "fast_api:app", "--host", "0.0.0.0", "--port", "8000"]

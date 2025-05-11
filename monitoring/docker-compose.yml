@@ -1,10 +1,9 @@
 version: "3.8"
 
 services:
-
   fastapi:
     build:
-      context: .
+      context: ../model_serving
       dockerfile: Dockerfile
     container_name: eye-disease-api
     ports:
@@ -13,6 +12,18 @@ services:
       - MINIO_URL=http://minio:9000
       - MINIO_USER=your-access-key
       - MINIO_PASSWORD=your-secret-key
+    volumes:
+      - ../resnet50_custom_model.onnx:/app/resnet50_custom_model.onnx
+    networks:
+      - monitor-net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - monitor-net
 
@@ -20,19 +31,20 @@ services:
     image: minio/minio
     container_name: minio
     command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: your-access-key
+      MINIO_ROOT_PASSWORD: your-secret-key
     ports:
       - "9000:9000"
       - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=your-access-key
-      - MINIO_ROOT_PASSWORD=your-secret-key
     volumes:
-      - minio_data:/data
+      - minio-data:/data
     networks:
       - monitor-net
 
   minio-init:
     image: minio/mc
+    container_name: minio_init
     depends_on:
       - minio
     entrypoint: >
@@ -44,26 +56,36 @@ services:
     networks:
       - monitor-net
 
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  labelstudio:
+    image: heartexlabs/label-studio:latest
+    container_name: labelstudio
     ports:
-      - "9090:9090"
+      - "8080:8080"
+    environment:
+      - LABEL_STUDIO_USERNAME=labelstudio@example.com
+      - LABEL_STUDIO_PASSWORD=labelstudio
     networks:
       - monitor-net
 
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    networks:
-      - monitor-net
-
-volumes:
-  minio_data:
+  # airflow:
+  #   image: apache/airflow:2.7.3
+  #   ports:
+  #     - "8081:8080"
+  #   environment:
+  #     - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+  #     - AIRFLOW__CORE__FERNET_KEY=YOUR_KEY
+  #     - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
+  #     - AIRFLOW__CORE__LOAD_EXAMPLES=False
+  #   volumes:
+  #     - ./dags:/opt/airflow/dags
+  #     - ./logs:/opt/airflow/logs
+  #     - ./plugins:/opt/airflow/plugins
+  #   command: standalone
+  #   networks:
+  #     - monitor-net
 
 networks:
   monitor-net:
+
+volumes:
+  minio-data:

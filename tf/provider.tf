@@ -11,3 +11,8 @@ provider "openstack" {
   alias = "kvm"
   cloud = "kvm"
 }
+
+provider "openstack" {
+  alias = "uc"
+  cloud = "uc"
+}

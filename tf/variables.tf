@@ -1,15 +1,21 @@
-variable "suffix" {
+variable "key" {
+  description = "SSH key pair name"
   type        = string
-  description = "Project/user suffix"
 }
 
-variable "key" {
+variable "suffix" {
+  description = "Suffix for naming resources"
   type        = string
-  description = "SSH key name"
 }
 
 variable "nodes" {
+  description = "Map of node roles to flavor types"
   type = map(object({
     flavor = string
   }))
+}
+
+variable "training_volume_id" {
+  description = "Volume ID to attach to training node"
+  type        = string
 }

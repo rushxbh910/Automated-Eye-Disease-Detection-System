@@ -3,40 +3,28 @@ locals {
   serving_node  = var.nodes["serve-1"]
 }
 
-# --------------------
-# KVM@TACC - Training Node (VM with volume attached)
-# --------------------
+# Training Node on KVM@TACC with attached volume
 resource "openstack_compute_instance_v2" "training_node" {
-  provider        = openstack.kvm
-  name            = "eye-train-train-1-${var.suffix}"
-  flavor_name     = local.training_node.flavor
-  key_pair        = var.key
-  image_id        = data.openstack_images_image_v2.ubuntu.id
-  user_data       = file("scripts/user_data_mount.sh") # Mount script (create this file)
+  provider     = openstack.kvm
+  name         = "eye-train-train-1-${var.suffix}"
+  flavor_name  = local.training_node.flavor
+  key_pair     = var.key
+  image_id     = data.openstack_images_image_v2.ubuntu.id
+  user_data    = file("scripts/user_data_mount.sh")
 
   network {
     name = "sharednet1"
   }
-
-  security_groups = ["default"]
 }
 
-resource "openstack_blockstorage_volume_v3" "training_volume" {
-  provider = openstack.kvm
-  name     = "block-persist-project24"
-  volume_id = var.training_volume_id
-}
-
-resource "openstack_compute_volume_attach_v2" "training_volume_attach" {
+resource "openstack_compute_volume_attach_v2" "attach_training_volume" {
   provider    = openstack.kvm
   instance_id = openstack_compute_instance_v2.training_node.id
-  volume_id   = openstack_blockstorage_volume_v3.training_volume.id
+  volume_id   = var.training_volume_id
   device      = "/dev/vdb"
 }
 
-# --------------------
-# KVM@TACC - Serving Node
-# --------------------
+# Serving Node on KVM@TACC
 resource "openstack_compute_instance_v2" "serving_node" {
   provider        = openstack.kvm
   name            = "eye-serve-serve-1-${var.suffix}"
@@ -77,9 +65,6 @@ resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
   port_id     = openstack_networking_port_v2.serving_port.id
 }
 
-# --------------------
-# Security Group (KVM)
-# --------------------
 resource "openstack_networking_secgroup_v2" "eye_secgroup" {
   provider = openstack.kvm
   name     = "eye-secgroup-${var.suffix}"

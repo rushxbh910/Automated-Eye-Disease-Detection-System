@@ -12,3 +12,4 @@ torchvision
 boto3
 torch
 requests
+minio

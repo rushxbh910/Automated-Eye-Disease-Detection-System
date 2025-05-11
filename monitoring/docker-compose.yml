@@ -1,24 +1,23 @@
 services:
-
-  fastapi:
-    build: ./fastapi
+  eye-fastapi:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
     container_name: eye-fastapi
     ports:
       - "8000:8000"
     volumes:
-      - ../../resnet50_custom_model.onnx:/app/resnet50_custom_model.onnx
+      - ./fastapi:/app
     networks:
       - monitor-net
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-    ports:
-      - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
     networks:
       - monitor-net
 
@@ -29,30 +28,25 @@ services:
       - "3000:3000"
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
     networks:
       - monitor-net
 
   minio:
     image: minio/minio
     container_name: minio
+    environment:
+      MINIO_ROOT_USER: your-access-key
+      MINIO_ROOT_PASSWORD: your-secret-key
     ports:
       - "9000:9000"
       - "9001:9001"
+    command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
-    environment:
-      - MINIO_ROOT_USER=your-access-key
-      - MINIO_ROOT_PASSWORD=your-secret-key
-    command: server /data --console-address ":9001"
     networks:
       - monitor-net
 
-  minio-init:
+  minio_init:
     image: minio/mc
     container_name: minio_init
     depends_on:
@@ -71,14 +65,12 @@ services:
     container_name: labelstudio
     ports:
       - "8080:8080"
-    environment:
-      - LABEL_STUDIO_USERNAME=labelstudio@example.com
-      - LABEL_STUDIO_PASSWORD=labelstudio
     networks:
       - monitor-net
 
-networks:
-  monitor-net:
-
 volumes:
   minio_data:
+
+networks:
+  monitor-net:
+    driver: bridge

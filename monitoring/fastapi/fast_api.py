@@ -1,47 +1,56 @@
-from fastapi import FastAPI, UploadFile, File, Request
-from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse, PlainTextResponse
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import JSONResponse, PlainTextResponse
 from PIL import Image
 import io
-import numpy as np
-import onnxruntime as ort
+import torch
+import torch.nn as nn
+import torchvision.transforms as transforms
+from torchvision import models
+from torchvision.models import MobileNet_V3_Large_Weights
 import time
-import os
+import numpy as np
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from torchvision import transforms
-from datetime import datetime
-import boto3
-import uuid
-from mimetypes import guess_type
 
 app = FastAPI()
 
-# Prometheus metrics
+# === Prometheus metrics ===
 PREDICTIONS_TOTAL = Counter("predictions_total", "Total prediction requests")
 PREDICTION_ERRORS = Counter("prediction_errors_total", "Total failed prediction attempts")
 INFERENCE_LATENCY = Histogram("inference_latency_seconds", "Time taken for a prediction")
 MODEL_CONFIDENCE = Gauge("model_confidence_score", "Confidence of last prediction")
 DRIFT_ALERT = Gauge("drift_alert", "1 if low confidence drift detected")
-
 low_confidence_streak = 0
 
-# MinIO setup
-MINIO_URL = os.getenv("MINIO_URL", "http://minio:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_USER", "your-access-key")
-MINIO_SECRET_KEY = os.getenv("MINIO_PASSWORD", "your-secret-key")
-s3 = boto3.client(
-    's3',
-    endpoint_url=MINIO_URL,
-    aws_access_key_id=MINIO_ACCESS_KEY,
-    aws_secret_access_key=MINIO_SECRET_KEY,
-    region_name='us-east-1'
-)
-BUCKET_NAME = "production"
+# === Device ===
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load ONNX model
-model_path = os.path.join(os.getcwd(), "resnet50_custom_model.onnx")
-session = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
-input_name = session.get_inputs()[0].name
+# === Load model ===
+def get_model_mobilenetv3(num_classes, freeze_layers=True):
+    model = models.mobilenet_v3_large(weights=MobileNet_V3_Large_Weights.DEFAULT)
+    if freeze_layers:
+        total_blocks = len(model.features)
+        for idx, module in enumerate(model.features):
+            if idx < total_blocks - 2:
+                for param in module.parameters():
+                    param.requires_grad = False
+            else:
+                for param in module.parameters():
+                    param.requires_grad = True
+    model.classifier = nn.Sequential(
+        nn.Linear(model.classifier[0].in_features, 512),
+        nn.ReLU(),
+        nn.Dropout(0.4),
+        nn.Linear(512, num_classes)
+    )
+    return model.to(device)
 
+model_path = "MobileNetV3.pth"
+num_classes = 10
+model = get_model_mobilenetv3(num_classes)
+model.load_state_dict(torch.load(model_path, map_location=device))
+model.eval()
+
+# === Class Map ===
 class_map = {
     0: "Central Serous Chorioretinopathy",
     1: "Diabetic Retinopathy",
@@ -55,6 +64,7 @@ class_map = {
     9: "Retinitis Pigmentosa"
 }
 
+# === Preprocessing ===
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -66,14 +76,14 @@ async def predict(file: UploadFile = File(...)):
     global low_confidence_streak
     try:
         start = time.time()
-        image_bytes = await file.read()
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        input_tensor = transform(image).unsqueeze(0).numpy()
+        image = Image.open(io.BytesIO(await file.read())).convert("RGB")
+        input_tensor = transform(image).unsqueeze(0).to(device)
 
-        outputs = session.run(None, {input_name: input_tensor})
-        probs = np.exp(outputs[0]) / np.sum(np.exp(outputs[0]), axis=1, keepdims=True)
-        pred = int(np.argmax(probs))
-        confidence = float(probs[0][pred])
+        with torch.no_grad():
+            outputs = model(input_tensor)
+            probs = torch.softmax(outputs, dim=1)
+            pred = torch.argmax(probs).item()
+            confidence = probs[0][pred].item()
 
         PREDICTIONS_TOTAL.inc()
         INFERENCE_LATENCY.observe(time.time() - start)
@@ -87,55 +97,14 @@ async def predict(file: UploadFile = File(...)):
             low_confidence_streak = 0
             DRIFT_ALERT.set(0)
 
-        # Save to MinIO
-        prediction_id = str(uuid.uuid4())
-        ext = os.path.splitext(file.filename)[1] or ".jpg"
-        timestamp = datetime.utcnow().isoformat() + "Z"
-        key = f"class_{pred:02d}/{prediction_id}{ext}"
-
-        s3.upload_fileobj(io.BytesIO(image_bytes), BUCKET_NAME, key, ExtraArgs={"ContentType": guess_type(file.filename)[0] or "application/octet-stream"})
-        s3.put_object_tagging(Bucket=BUCKET_NAME, Key=key, Tagging={
-            "TagSet": [
-                {"Key": "predicted_class", "Value": class_map[pred]},
-                {"Key": "confidence", "Value": f"{confidence:.3f}"},
-                {"Key": "timestamp", "Value": timestamp}
-            ]
-        })
-
         return JSONResponse({
             "predicted_class": class_map[pred],
-            "confidence": round(confidence, 4),
-            "s3_key": key
+            "confidence": round(confidence, 4)
         })
 
     except Exception as e:
         PREDICTION_ERRORS.inc()
         return JSONResponse(status_code=500, content={"error": str(e)})
-
-@app.post("/flag/{key:path}")
-def flag_prediction(key: str):
-    tags = s3.get_object_tagging(Bucket=BUCKET_NAME, Key=key)['TagSet']
-    tag_dict = {tag['Key']: tag['Value'] for tag in tags}
-    tag_dict['flagged'] = "true"
-    tag_set = [{"Key": k, "Value": v} for k, v in tag_dict.items()]
-    s3.put_object_tagging(Bucket=BUCKET_NAME, Key=key, Tagging={'TagSet': tag_set})
-    return RedirectResponse(url="/success")
-
-@app.post("/correct-label/{key:path}")
-def correct_label(key: str, request: Request):
-    from starlette.requests import FormData
-    form_data = request._form
-    new_label = form_data.get("corrected_class")
-    tags = s3.get_object_tagging(Bucket=BUCKET_NAME, Key=key)['TagSet']
-    tag_dict = {tag['Key']: tag['Value'] for tag in tags}
-    tag_dict['corrected_class'] = new_label
-    tag_set = [{"Key": k, "Value": v} for k, v in tag_dict.items()]
-    s3.put_object_tagging(Bucket=BUCKET_NAME, Key=key, Tagging={'TagSet': tag_set})
-    return RedirectResponse(url="/success")
-
-@app.get("/success")
-def success():
-    return HTMLResponse("<h3>Thank you for your feedback!</h3>")
 
 @app.get("/metrics")
 def metrics():

@@ -8,4 +8,6 @@ onnxruntime==1.17.1
 pillow==10.2.0
 numpy==1.26.4
 prometheus-client==0.20.0
+torchvision
 boto3
+pytorch

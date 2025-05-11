@@ -1,4 +1,0 @@
-apiVersion: v2
-name: eye-platform
-description: MLflow + MinIO + Postgres for Eye Disease Detection
-version: 0.1.0

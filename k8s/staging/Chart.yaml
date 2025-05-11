@@ -1,4 +1,0 @@
-apiVersion: v2
-name: eyeapp-staging
-description: Eye Disease App Staging Deployment
-version: 0.1.0

@@ -84,10 +84,12 @@ resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
 }
 
 resource "openstack_networking_secgroup_v2" "eye_secgroup" {
-  name = "eye-secgroup-${var.suffix}"
+  provider = openstack.chi
+  name     = "eye-secgroup-${var.suffix}"
 }
 
 resource "openstack_networking_secgroup_rule_v2" "inbound" {
+  provider         = openstack.chi
   for_each         = toset(["22", "80", "443", "8080", "8081", "8888", "9000", "9001"])
   direction        = "ingress"
   ethertype        = "IPv4"

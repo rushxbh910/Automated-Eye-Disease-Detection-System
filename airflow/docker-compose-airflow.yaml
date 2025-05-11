@@ -7,29 +7,25 @@ services:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
 
-  webserver:
-    image: apache/airflow:2.7.0
+  airflow:
+    image: apache/airflow:2.7.1
     restart: always
     depends_on:
       - postgres
-    environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__WEBSERVER__DEFAULT_USER_EMAIL: airflow@example.com
-      AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD: airflow
-      AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME: airflow
-    volumes:
-      - ./dags:/opt/airflow/dags
     ports:
       - "8081:8080"
-    command: webserver
-
-  scheduler:
-    image: apache/airflow:2.7.0
-    depends_on:
-      - webserver
-      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME: airflow@example.com
+      AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD: airflow
     volumes:
       - ./dags:/opt/airflow/dags
-    command: scheduler
+    command: >
+      bash -c "airflow db upgrade && airflow users create --username airflow@example.com --password airflow --firstname Air --lastname Flow --role Admin --email airflow@example.com && airflow webserver"
+
+volumes:
+  postgres_db:

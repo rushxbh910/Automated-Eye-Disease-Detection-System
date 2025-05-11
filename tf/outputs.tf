@@ -1,3 +1,7 @@
+output "training_floating_ip" {
+  value = openstack_networking_floatingip_v2.training_fip.address
+}
+
 output "serving_floating_ip" {
   value = openstack_networking_floatingip_v2.serving_fip.address
 }

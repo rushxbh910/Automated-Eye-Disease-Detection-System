@@ -1,20 +1,25 @@
+
 locals {
   training_node = var.nodes["train-1"]
   serving_node  = var.nodes["serve-1"]
 }
 
 # --------------------
-# CHI@UC: Training Node (Bare Metal - No Security Groups, No Ports)
+# CHI@TACC: Training Node (GPU Bare Metal - No Security Groups or Ports)
 # --------------------
 resource "openstack_compute_instance_v2" "training_node" {
-  provider        = openstack.uc
-  name            = "eye-train-train-1-${var.suffix}"
-  flavor_name     = local.training_node.flavor
-  key_pair        = var.key
-  image_id        = data.openstack_images_image_v2.ubuntu.id
+  provider     = openstack.chi
+  name         = "eye-train-train-1-${var.suffix}"
+  flavor_name  = local.training_node.flavor
+  key_pair     = var.key
+  image_id     = data.openstack_images_image_v2.ubuntu.id
 
   network {
     name = "sharednet1"
+  }
+
+  scheduler_hints {
+    group = "8058d28f-e745-47f4-b019-60aa3849eae7"
   }
 }
 
@@ -61,22 +66,29 @@ resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
   port_id     = openstack_networking_port_v2.serving_port.id
 }
 
-# --------------------
-# Security Group (Only needed for KVM)
-# --------------------
 resource "openstack_networking_secgroup_v2" "eye_secgroup" {
   provider = openstack.kvm
   name     = "eye-secgroup-${var.suffix}"
 }
 
 resource "openstack_networking_secgroup_rule_v2" "inbound" {
-  provider         = openstack.kvm
-  for_each         = toset(["22", "80", "443", "8080", "8081", "8888", "9000", "9001"])
-  direction        = "ingress"
-  ethertype        = "IPv4"
-  protocol         = "tcp"
-  port_range_min   = each.value
-  port_range_max   = each.value
-  remote_ip_prefix = "0.0.0.0/0"
+  provider          = openstack.kvm
+  for_each          = toset(["22", "80", "443", "8080", "8081", "8888", "9000", "9001"])
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = each.value
+  port_range_max    = each.value
+  remote_ip_prefix  = "0.0.0.0/0"
   security_group_id = openstack_networking_secgroup_v2.eye_secgroup.id
+}
+
+provider "openstack" {
+  alias = "chi"
+  cloud = "chi"
+}
+
+provider "openstack" {
+  alias = "kvm"
+  cloud = "kvm"
 }

@@ -3,6 +3,9 @@ locals {
   serving_node  = var.nodes["serve-1"]
 }
 
+# --------------------
+# CHI@TACC: Training Node (Bare Metal - No Security Groups)
+# --------------------
 resource "openstack_compute_instance_v2" "training_node" {
   provider        = openstack.chi
   name            = "eye-train-train-1-${var.suffix}"
@@ -14,7 +17,7 @@ resource "openstack_compute_instance_v2" "training_node" {
     port = openstack_networking_port_v2.training_port.id
   }
 
-  security_groups = ["default", "eye-secgroup-${var.suffix}"]
+  # ❌ No security_groups allowed on CHI@TACC
 }
 
 resource "openstack_networking_port_v2" "training_port" {
@@ -26,10 +29,7 @@ resource "openstack_networking_port_v2" "training_port" {
     subnet_id = data.openstack_networking_subnet_v2.sharednet1_subnet.id
   }
 
-  security_group_ids = [
-    data.openstack_networking_secgroup_v2.default.id,
-    openstack_networking_secgroup_v2.eye_secgroup.id
-  ]
+  # ❌ No security_group_ids on CHI@TACC
 }
 
 resource "openstack_networking_floatingip_v2" "training_fip" {
@@ -43,6 +43,9 @@ resource "openstack_networking_floatingip_associate_v2" "training_fip_assoc" {
   port_id     = openstack_networking_port_v2.training_port.id
 }
 
+# --------------------
+# KVM@TACC: Serving Node (VM - Security Groups Allowed)
+# --------------------
 resource "openstack_compute_instance_v2" "serving_node" {
   provider        = openstack.kvm
   name            = "eye-serve-serve-1-${var.suffix}"
@@ -83,13 +86,16 @@ resource "openstack_networking_floatingip_associate_v2" "serving_fip_assoc" {
   port_id     = openstack_networking_port_v2.serving_port.id
 }
 
+# --------------------
+# Security Group (Only needed for KVM)
+# --------------------
 resource "openstack_networking_secgroup_v2" "eye_secgroup" {
-  provider = openstack.chi
+  provider = openstack.kvm
   name     = "eye-secgroup-${var.suffix}"
 }
 
 resource "openstack_networking_secgroup_rule_v2" "inbound" {
-  provider         = openstack.chi
+  provider         = openstack.kvm
   for_each         = toset(["22", "80", "443", "8080", "8081", "8888", "9000", "9001"])
   direction        = "ingress"
   ethertype        = "IPv4"

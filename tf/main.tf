@@ -3,28 +3,30 @@ locals {
   serving_node  = var.nodes["serve-1"]
 }
 
-# Training Node on KVM@TACC with attached volume
+# Training node (KVM@TACC)
 resource "openstack_compute_instance_v2" "training_node" {
   provider     = openstack.kvm
   name         = "eye-train-train-1-${var.suffix}"
   flavor_name  = local.training_node.flavor
   key_pair     = var.key
   image_id     = data.openstack_images_image_v2.ubuntu.id
-  user_data    = file("scripts/user_data_mount.sh")
 
   network {
     name = "sharednet1"
   }
+
+  user_data = file("scripts/user_data_mount.sh")
 }
 
-resource "openstack_compute_volume_attach_v2" "attach_training_volume" {
-  provider    = openstack.kvm
+# Training volume (already exists, attach only)
+resource "openstack_compute_volume_attach_v2" "training_attach" {
+  provider   = openstack.kvm
   instance_id = openstack_compute_instance_v2.training_node.id
   volume_id   = var.training_volume_id
   device      = "/dev/vdb"
 }
 
-# Serving Node on KVM@TACC
+# Serving node (KVM@TACC)
 resource "openstack_compute_instance_v2" "serving_node" {
   provider        = openstack.kvm
   name            = "eye-serve-serve-1-${var.suffix}"

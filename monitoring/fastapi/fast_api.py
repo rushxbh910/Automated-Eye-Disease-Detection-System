@@ -28,7 +28,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # === Load model ===
 def get_model_densenet121(num_classes, freeze_layers=True):
-    model = models.densenet121(weights=DenseNet121_Weights.DEFAULT)
+    model = models.densenet121(weights=None)
     if freeze_layers:
         features = list(model.features.children())
         total_blocks = len(features)

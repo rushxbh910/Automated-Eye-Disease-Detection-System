@@ -656,7 +656,7 @@ Automated-Eye-Disease-Detection-System/
 | Stage                        | Tool           | Triggered By            |
 |-----------------------------|----------------|--------------------------|
 | VM + IP Provisioning        | Terraform      | terraform apply        |
-| Volume Mounting             | Terraform      | user_data              |
+| Volume Mounting             | Terraform      | terraform apply        |
 | Model Training              | Docker + Airflow | DAG task              |
 | Evaluation & Monitoring     | Docker Compose | DAG task                 |
 | Image Build & Deployment    | Airflow        | DAG task                 |

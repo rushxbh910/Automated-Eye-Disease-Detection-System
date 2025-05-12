@@ -504,21 +504,6 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
 
 ---
 
-##### Directory Structure
-
-
-monitoring/
-├── docker-compose.yml
-├── prometheus.yml
-├── fastapi/
-│   ├── fast_api.py
-│   ├── densenet121_model.pth
-│   └── requirements.txt
-├── grafana/
-│   └── provisioning/
-├── mlruns/            # MLflow logs
-├── minio_data/        # Persistent volume
-└── labelstudio/
 
 
 ---

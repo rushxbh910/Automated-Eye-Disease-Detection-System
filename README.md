@@ -592,7 +592,7 @@ Docker Compose launches the following services on the persistent node:
 | MLflow         | 5000   | Experiment tracking                      |
 | MinIO          | 9000   | Object storage backend                   |
 | Label Studio   | 8080   | Human labeling interface                 |
-| Airflow Web UI | 8090   | DAG management and execution interface   |
+| Airflow Web UI | 3001   | DAG management and execution interface   |
 
 ---
 

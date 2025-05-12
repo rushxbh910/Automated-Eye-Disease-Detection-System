@@ -68,11 +68,6 @@ class_map = {
     7: "Pterygium",
     8: "Retinal Detachment",
     9: "Retinitis Pigmentosa",
-    10: "Unused-Class-10",
-    11: "Unused-Class-11",
-    12: "Unused-Class-12",
-    13: "Unused-Class-13",
-    14: "Unused-Class-14"
 }
 
 # === Preprocessing ===

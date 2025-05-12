@@ -10,6 +10,7 @@ from torchvision.models import MobileNet_V3_Large_Weights
 import time
 import numpy as np
 import mlflow
+import requests
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 app = FastAPI()
@@ -25,8 +26,20 @@ low_confidence_streak = 0
 confidence_threshold = 0.5
 streak_threshold = 5
 
-# === MLflow setup ===
+# === MLflow setup with retry ===
 mlflow.set_tracking_uri("http://mlflow:5000")
+
+for _ in range(20):
+    try:
+        res = requests.get("http://mlflow:5000/health", timeout=3)
+        if res.status_code == 200:
+            break
+    except Exception:
+        print("⏳ Waiting for MLflow to start...")
+        time.sleep(3)
+else:
+    raise RuntimeError("❌ Could not connect to MLflow server.")
+
 mlflow.set_experiment("eye_disease_inference")
 
 # === Device ===

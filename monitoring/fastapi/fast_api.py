@@ -8,9 +8,9 @@ import torchvision.transforms as transforms
 from torchvision import models
 from torchvision.models import MobileNet_V3_Large_Weights
 import time
+import numpy as np
+import requests
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from minio import Minio
-from datetime import datetime
 
 app = FastAPI()
 
@@ -20,7 +20,13 @@ PREDICTION_ERRORS = Counter("prediction_errors_total", "Total failed prediction 
 INFERENCE_LATENCY = Histogram("inference_latency_seconds", "Time taken for a prediction")
 MODEL_CONFIDENCE = Gauge("model_confidence_score", "Confidence of last prediction")
 DRIFT_ALERT = Gauge("drift_alert", "1 if low confidence drift detected")
+
 low_confidence_streak = 0
+confidence_threshold = 0.5
+streak_threshold = 5
+)
+
+
 
 # === Device ===
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -34,6 +40,9 @@ def get_model_mobilenetv3(num_classes, freeze_layers=True):
             if idx < total_blocks - 2:
                 for param in module.parameters():
                     param.requires_grad = False
+            else:
+                for param in module.parameters():
+                    param.requires_grad = True
     model.classifier = nn.Sequential(
         nn.Linear(model.classifier[0].in_features, 512),
         nn.ReLU(),
@@ -41,9 +50,6 @@ def get_model_mobilenetv3(num_classes, freeze_layers=True):
         nn.Linear(512, num_classes)
     )
     return model.to(device)
-
-
-
 
 model_path = "MobileNetV3.pth"
 num_classes = 15
@@ -77,29 +83,13 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-# === MinIO Setup ===
-minio_client = Minio(
-    "minio:9000",
-    access_key="your-access-key",
-    secret_key="your-secret-key",
-    secure=False
-)
-bucket_name = "misclassified"
-if not minio_client.bucket_exists(bucket_name):
-    minio_client.make_bucket(bucket_name)
-
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), true_label: int = 0):  # ground truth for testing
+async def predict(file: UploadFile = File(...)):
     global low_confidence_streak
     try:
         start = time.time()
-        image_bytes = await file.read()
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        image = Image.open(io.BytesIO(await file.read())).convert("RGB")
         input_tensor = transform(image).unsqueeze(0).to(device)
-        
-        import mlflow
-
-
 
         with torch.no_grad():
             outputs = model(input_tensor)
@@ -111,24 +101,14 @@ async def predict(file: UploadFile = File(...), true_label: int = 0):  # ground 
         INFERENCE_LATENCY.observe(time.time() - start)
         MODEL_CONFIDENCE.set(confidence)
 
-        if confidence < 0.5:
+        if confidence < confidence_threshold:
             low_confidence_streak += 1
-            if low_confidence_streak >= 5:
+            if low_confidence_streak >= streak_threshold:
                 DRIFT_ALERT.set(1)
         else:
             low_confidence_streak = 0
             DRIFT_ALERT.set(0)
 
-        # Save if misclassified
-        if pred != true_label:
-            filename = f"{datetime.utcnow().isoformat()}_{file.filename}"
-            minio_client.put_object(
-                bucket_name,
-                filename,
-                io.BytesIO(image_bytes),
-                length=len(image_bytes),
-                content_type="image/jpeg"
-            )
 
         return JSONResponse({
             "predicted_class": class_map[pred],

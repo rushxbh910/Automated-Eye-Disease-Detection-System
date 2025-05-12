@@ -32,7 +32,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # === Load model ===
 def get_model_mobilenetv3(num_classes, freeze_layers=True):
-    model = models.mobilenet_v3_large(weights=MobileNet_V3_Large_Weights.DEFAULT)
+    model = models.mobilenet_v3_large(weights=None)
     if freeze_layers:
         total_blocks = len(model.features)
         for idx, module in enumerate(model.features):

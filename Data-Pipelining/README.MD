@@ -161,3 +161,190 @@ minio container (artifact storage)
 mlflow container (the MLflow tracking server)
 
 jupyter container (to run experiments using MLflow)
+
+
+
+
+
+**Project Report: Automated Eye Disease Detection System - Data Pipeline Setup and Dashboard**
+
+This report details the steps taken to build the data processing pipeline, including object and block storage setup, data ingestion and transformation, and an interactive dashboard for data exploration.
+
+---
+
+### 1. Object Store Setup
+
+The object store was created on the CHI\@TACC site using the **Chameleon GUI**. No CLI commands were used to provision the object store. A container named `object-persist-project24` was created to hold datasets.
+
+---
+
+### 2. Block Storage Setup
+
+Block storage was provisioned on KVM\@TACC using the **Chameleon GUI**. A volume named `block-persist-project24` was created and attached to the persistent KVM\@TACC node. Once attached, it was formatted and mounted:
+
+```bash
+sudo mkfs.ext4 /dev/vdb
+sudo mkdir -p /mnt/block
+sudo mount /dev/vdb /mnt/block
+```
+
+---
+
+### 3. Loading Raw Data into the Object Store
+
+The raw dataset was first uploaded to the node using `scp` and then transferred to the object store via the following `docker-compose-etl-upload.yaml` file:
+
+```yaml
+services:
+  upload-raw-data:
+    image: rclone/rclone:latest
+    volumes:
+      - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
+      - ./raw_eye_dataset:/data
+    command: copy /data chi_tacc:object-persist-project24/raw_eye_dataset
+```
+
+This was run with:
+
+```bash
+docker compose -f docker-compose-etl-upload.yaml up upload-raw-data
+```
+
+---
+
+### 4. ETL Pipeline (Extract-Transform-Load)
+
+The data transformation was handled by the following `transform.py` script. It reads raw images from the object store, applies resizing, normalization, and saves them into 5 stratified splits: train, test, holdout\_1, holdout\_2, holdout\_3.
+
+```python
+from torchvision.datasets import ImageFolder
+from torchvision import transforms
+from sklearn.model_selection import StratifiedShuffleSplit
+from torch.utils.data import Subset, DataLoader
+from torchvision.utils import save_image
+import numpy as np, os, torch
+
+RAW_DATA_DIR = "/data/raw_eye_dataset"
+OUTPUT_DIR = "/data/processed"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+base_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+dataset = ImageFolder(RAW_DATA_DIR, transform=base_transform)
+labels = [label for _, label in dataset.samples]
+
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+train_idx, test_idx = next(sss.split(np.zeros(len(labels)), labels))
+train_set = Subset(dataset, train_idx)
+test_set = Subset(dataset, test_idx)
+
+# Holdouts
+holdout_labels = [labels[i] for i in test_idx]
+sss_holdout = StratifiedShuffleSplit(n_splits=3, test_size=1/3, random_state=42)
+holdouts, used = [], set()
+for i, (_, test_h) in enumerate(sss_holdout.split(np.zeros(len(holdout_labels)), holdout_labels)):
+    new_idx = [j for j in test_h if j not in used]
+    used.update(new_idx)
+    holdouts.append(Subset(dataset, [test_idx[j] for j in new_idx]))
+
+def save_subset(subset, path):
+    loader = DataLoader(subset, batch_size=1, shuffle=False)
+    for i, (img, label) in enumerate(loader):
+        cls_dir = os.path.join(path, dataset.classes[label.item()])
+        os.makedirs(cls_dir, exist_ok=True)
+        save_image(img, os.path.join(cls_dir, f"img_{i:05d}.png"))
+
+save_subset(train_set, os.path.join(OUTPUT_DIR, "train"))
+save_subset(test_set, os.path.join(OUTPUT_DIR, "test"))
+for i, holdout in enumerate(holdouts):
+    save_subset(holdout, os.path.join(OUTPUT_DIR, f"holdout_{i+1}"))
+```
+
+This was orchestrated using the Docker Compose file:
+
+```yaml
+services:
+  transform-data:
+    image: python:3.11
+    container_name: etl_transform_data
+    volumes:
+      - eye_data:/data
+      - ./scripts/transform.py:/data/transform.py:ro
+    working_dir: /data
+    command: bash -c "pip install torch torchvision scikit-learn --break-system-packages && python3 transform.py"
+
+volumes:
+  eye_data:
+```
+
+The transformed output is stored back in the object store under:
+`object-persist-project24/transformed_eye_dataset`
+
+---
+
+### 5. Streamlit Data Dashboard
+
+An interactive Streamlit dashboard was built to explore the transformed dataset. The app reads from `/data/train`, `/data/test`, etc., and visualizes:
+
+* Image counts per class
+* Sample images from each class
+
+Dockerfile:
+
+```Dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+```
+
+requirements.txt:
+
+```
+streamlit
+matplotlib
+Pillow
+torch
+torchvision
+```
+
+app.py (abbreviated):
+
+```python
+import streamlit as st
+import os
+import matplotlib.pyplot as plt
+from PIL import Image
+
+def show_class_distribution(data_split):
+    folder = f"/data/{data_split}"
+    class_counts = {cls: len(os.listdir(os.path.join(folder, cls))) for cls in os.listdir(folder)}
+    st.bar_chart(class_counts)
+
+st.title("Eye Dataset Viewer")
+split = st.selectbox("Select Dataset Split", ["train", "test", "holdout_1"])
+show_class_distribution(split)
+```
+
+Build and run:
+
+```bash
+docker build -t streamlit-eye-app .
+docker run -d -p 8501:8501 \
+  -v /mnt/object/transformed_eye_dataset:/data \
+  --name streamlit_app \
+  streamlit-eye-app
+```
+
+Access the dashboard at `http://<NODE_IP>:8501`
+
+---
+
+This end-to-end setup allows for a modular, observable, and visual pipeline from data ingestion to transformation and inspection.
+

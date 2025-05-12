@@ -24,7 +24,7 @@ sudo mount /dev/vdb /mnt/block
 
 ### 3. Loading Raw Data into the Object Store
 
-The raw dataset was first uploaded to the node using `scp` and then transferred to the object store via the following `docker-compose-etl-upload-raw.yaml` file:
+The raw dataset was first uploaded to the node using `scp` and then transferred to the object store via the following `docker-compose-etl-upload-raw.yaml` file which is present in the `Data-Pipelining` folder of this repository:
 
 ```yaml
 name: eye-raw-etl
@@ -60,14 +60,14 @@ services:
 This was run with:
 
 ```bash
-docker compose -f docker-compose-etl-upload-raw.yaml up upload-raw-data
+docker compose -f docker-compose-etl-upload-raw.yaml up load-raw-data
 ```
 
 ---
 
 ### 4. ETL Pipeline (Extract-Transform-Load)
 
-The data transformation was handled by the following `transform.py` script. It reads raw images from the object store, applies resizing, normalization, and saves them into 5 stratified splits: train, test, holdout\_1, holdout\_2, holdout\_3.
+The data transformation was handled by the following `transform.py` script which is present in the `streamlit-dashboard` folder in the 'Data-Pipelining` folder of this repository. It reads raw images from the object store, applies resizing, normalization, and saves them into 5 stratified splits: train, test, holdout\_1, holdout\_2, holdout\_3.
 
 ```python
 import os
@@ -142,7 +142,7 @@ print(f"- {OUTPUT_DIR}/test")
 print(f"- {OUTPUT_DIR}/holdout_1, holdout_2, holdout_3")
 ```
 
-This was orchestrated using the Docker Compose file:
+This was orchestrated using the Docker Compose file which is the `docker-compose-etl.yaml` file in the `Data-Pipelining` folder of this repository:
 
 ```yaml
 name: eye-etl
@@ -226,6 +226,12 @@ services:
 
 The transformed output is stored back in the object store under:
 `object-persist-project24/transformed_eye_dataset`
+
+This was run with:
+
+```bash
+docker compose -f docker-compose-etl.yaml up
+```
 
 ---
 

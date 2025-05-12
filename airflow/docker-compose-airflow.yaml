@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   postgres:
     image: postgres:13
@@ -14,30 +12,30 @@ services:
 
   airflow:
     image: apache/airflow:2.7.1
-    container_name: airflow
     restart: always
     depends_on:
       - postgres
     ports:
-      - "3001:8080"  # Avoids conflict with Label Studio (8080)
+      - "8081:8080"
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME: airflow@example.com
       AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD: airflow
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./scripts:/opt/airflow/scripts
+      - /mnt/block/airflow/dags:/opt/airflow/dags
+      - /var/run/docker.sock:/var/run/docker.sock
     command: >
-      bash -c "airflow db upgrade &&
-               airflow users create --username airflow@example.com --password airflow --firstname Air --lastname Flow --role Admin --email airflow@example.com &&
-               airflow webserver"
+      bash -c "
+      airflow db upgrade &&
+      airflow users create --username airflow@example.com --password airflow --firstname Air --lastname Flow --role Admin --email airflow@example.com &&
+      airflow webserver"
     networks:
       - airflow-net
-
-volumes:
-  postgres_db:
 
 networks:
   airflow-net:
     driver: bridge
+
+volumes:
+  postgres_db:

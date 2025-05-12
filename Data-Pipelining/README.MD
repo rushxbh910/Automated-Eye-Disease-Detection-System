@@ -347,97 +347,110 @@ This end-to-end setup allows for a modular, observable, and visual pipeline from
 
 ---
 
-### 6. MLFlow Persistence Setup on Chameleon Cloud (Teammate Contribution)
 
-To enable persistent experiment tracking and model logging, MLFlow was set up on a GPU-enabled node on Chameleon Cloud.
+Training Using MLflow and Ray
+=============================
 
-#### a. Node Provisioning
+To enable persistent experiment tracking and model logging, MLflow was set up on a GPU-enabled node on Chameleon Cloud.
 
-A GPU instance was launched using the `CC-Ubuntu24.04-CUDA` image from the Chameleon GUI (CHI\@TACC site). A floating IP was associated for remote access.
+A. Node Provisioning
+--------------------
 
-```python
-from chi import server, context, lease
-context.choose_project()
-context.choose_site(default="CHI@TACC")
-l = lease.get_lease("Project24001")
-s = server.Server("node-sb9880-01", reservation_id=l.node_reservations[0]["id"], image_name="CC-Ubuntu24.04-CUDA")
-s.submit(idempotent=True)
-s.associate_floating_ip()
-s.refresh()
-s.check_connectivity()
-```
+A GPU instance was launched using the `CC-Ubuntu24.04-CUDA` image from the Chameleon GUI (CHI@TACC site). A floating IP was associated for remote access.
 
-#### b. Security Group Configuration
+Provisioning script using the Chameleon Python SDK:
+
+    from chi import server, context, lease
+
+    context.choose_project()
+    context.choose_site(default="CHI@TACC")
+
+    l = lease.get_lease("Project24001")
+    s = server.Server("node-sb9880-01", reservation_id=l.node_reservations[0]["id"], image_name="CC-Ubuntu24.04-CUDA")
+
+    s.submit(idempotent=True)
+    s.associate_floating_ip()
+    s.refresh()
+    s.check_connectivity()
+
+B. Security Group Configuration
+-------------------------------
 
 OpenStack security groups were configured to allow traffic to key services:
 
-* SSH (22)
-* Jupyter (8888)
-* MLFlow (8000)
-* MinIO (9000, 9001)
+- SSH (22)
+- Jupyter (8888)
+- MLflow (8000)
+- MinIO (9000, 9001)
 
-Security rules were added via `os_conn.create_security_group()` and attached to the server.
+Security rules were added using `os_conn.create_security_group()` and attached to the server.
 
-#### c. Docker and GPU Setup
+C. Docker GPU Driver Setup
+--------------------------
 
-Docker was installed with:
+Required drivers and Docker setup were installed for GPU support.
 
-```bash
-curl -sSL https://get.docker.com/ | sudo sh
-sudo usermod -aG docker $USER
-```
+D. Docker Images for MLflow + Jupyter
+-------------------------------------
 
-For NVIDIA GPUs:
+Custom Dockerfiles were used for setup:
 
-```bash
-# NVIDIA container runtime setup
-sudo apt install -y nvidia-container-toolkit
-sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl restart docker
-```
+- Dockerfile.jupyter-torch-mlflow-rocm
+- Dockerfile.ray-rocm
 
-For AMD GPUs:
+E. Rclone Configuration for Object Storage
+------------------------------------------
 
-```bash
-wget https://repo.radeon.com/amdgpu-install/6.3.3/ubuntu/noble/amdgpu-install_6.3.60303-1_all.deb
-sudo apt install ./amdgpu-install_6.3.60303-1_all.deb
-amdgpu-install -y --usecase=dkms
-sudo usermod -aG video,render $USER
-```
+1. Start `rclone config`
+2. Add a config file using Application Credentials
+3. Mount the object store to the node
 
-#### d. Docker Image for MLFlow + Jupyter
+F. Docker Volume Setup
+----------------------
 
-A custom image `jupyter-mlflow` was built from a Dockerfile with PyTorch, CUDA, Jupyter, and MLFlow preinstalled.
+Create a named Docker volume (e.g., `EYE`) to persist and share data between containers.
 
-```bash
-docker build -t jupyter-mlflow -f Dockerfile.jupyter-torch-mlflow-cuda .
-```
+G. Running All Services with Docker Compose
+-------------------------------------------
 
-#### e. Rclone Configuration for Object Storage
+Use the following compose file to run all services:
 
-Rclone was used to mount the CHI\@TACC object store to `/mnt/object`:
+- docker-compose-ray-mlflow-data.yaml
 
-```bash
-rclone config  # (manual step to set chi_tacc remote)
-rclone mount chi_tacc:object-persist-project24 /mnt/object --allow-other --daemon
-```
+H. Launch Jupyter and Connect to Ray & MLflow
+---------------------------------------------
 
-Rclone config snippet:
+    HOST_IP=$(curl --silent http://169.254.169.254/latest/meta-data/public-ipv4)
 
-```
-[chi_tacc]
-type = swift
-user_id = <your-user-id>
-application_credential_id = <cred-id>
-application_credential_secret = <cred-secret>
-auth = https://chi.tacc.chameleoncloud.org:5000/v3
-region = CHI@TACC
-```
+    docker run -d --rm -p 8888:8888 \
+        -v ~/workspace:/home/jovyan/work/ \
+        -v EYE:/mnt/ \
+        -e RAY_ADDRESS=http://${HOST_IP}:8265/ \
+        -e MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/ \
+        -e EYE_DATA_DIR=/mnt/data/transformed_eye_dataset \
+        --name jupyter \
+        jupyter-ray
 
----
+Image ID used:
 
+    c907ecd9d31828ffce7d3840739f999ca42de8cab5c29897ad63ae68a30fd766
 
-This system deploys a DenseNet121-based eye disease classifier via FastAPI in multiple environments, tracks predictions with MLflow, and monitors inference metrics using Prometheus + Grafana. Feedback loops are supported via MinIO and Label Studio.
+I. Submit Jobs to Ray Cluster
+-----------------------------
+
+    ray job submit \
+      --runtime-env runtime.json \
+      --entrypoint-num-gpus 1 \
+      --entrypoint-num-cpus 8 \
+      --verbose \
+      --working-dir code/ \
+      -- python ray-code00.py
+
+Important:
+----------
+
+Make sure your dataset is NOT inside the working directory sent with `--working-dir`, as Ray will package and send all files in that directory to workers.
+Workers already have access to data via the Docker volume, so duplicating it is unnecessary and inefficient.
 
 ---
 
@@ -516,7 +529,7 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
 
 ---
 
-### 7. Continous X
+### 8. Continous X
 
 # Automated Eye Disease Detection System (MLOps)
 

@@ -1,4 +1,4 @@
-##Project Report: Automated Eye Disease Detection System - Data Pipeline Setup and Dashboard##
+##Project Report: Automated Eye Disease Detection System - Data Pipeline Setup and Dashboard
 
 This report details the steps taken to build the data processing pipeline, including object and block storage setup, data ingestion and transformation, and an interactive dashboard for data exploration.
 

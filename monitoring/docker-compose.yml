@@ -16,12 +16,10 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-    dns:
-      - 8.8.8.8 
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - monitor-net
 

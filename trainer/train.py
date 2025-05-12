@@ -96,24 +96,24 @@ Set up GPU support for Docker based on your hardware. Choose the appropriate sec
 Configure Docker to work with NVIDIA GPUs.
 """
 
-# Install NVIDIA Container Toolkit
-s.execute("curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list")
-s.execute("sudo apt update")
-s.execute("sudo apt-get install -y nvidia-container-toolkit")
-s.execute("sudo nvidia-ctk runtime configure --runtime=docker")
+# # Install NVIDIA Container Toolkit
+# s.execute("curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+#   && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+#     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+#     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list")
+# s.execute("sudo apt update")
+# s.execute("sudo apt-get install -y nvidia-container-toolkit")
+# s.execute("sudo nvidia-ctk runtime configure --runtime=docker")
 
-# Fix for https://github.com/NVIDIA/nvidia-container-toolkit/issues/48
-s.execute("sudo jq 'if has(\"exec-opts\") then . else . + {\"exec-opts\": [\"native.cgroupdriver=cgroupfs\"]} end' /etc/docker/daemon.json | sudo tee /etc/docker/daemon.json.tmp > /dev/null && sudo mv /etc/docker/daemon.json.tmp /etc/docker/daemon.json")
+# # Fix for https://github.com/NVIDIA/nvidia-container-toolkit/issues/48
+# s.execute("sudo jq 'if has(\"exec-opts\") then . else . + {\"exec-opts\": [\"native.cgroupdriver=cgroupfs\"]} end' /etc/docker/daemon.json | sudo tee /etc/docker/daemon.json.tmp > /dev/null && sudo mv /etc/docker/daemon.json.tmp /etc/docker/daemon.json")
 
-# Restart Docker service to apply changes
-s.execute("sudo systemctl restart docker")
+# # Restart Docker service to apply changes
+# s.execute("sudo systemctl restart docker")
 
-# Install nvtop for monitoring NVIDIA GPUs
-s.execute("sudo apt update")
-s.execute("sudo apt -y install nvtop")
+# # Install nvtop for monitoring NVIDIA GPUs
+# s.execute("sudo apt update")
+# s.execute("sudo apt -y install nvtop")
 
 """### 6B. AMD GPU Setup
 

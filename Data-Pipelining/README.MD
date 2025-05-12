@@ -445,7 +445,7 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
 
 This system deploys a DenseNet121-based eye disease classifier via FastAPI in multiple environments, tracks predictions with MLflow, and monitors inference metrics using Prometheus + Grafana. Feedback loops are supported via MinIO and Label Studio.
 
-## FastAPI Application (fast_api.py)
+#### FastAPI Application (fast_api.py)
 
 * Loads densenet121_model.pth with 15 disease classes
 * Partial layer freezing for optimized inference
@@ -461,7 +461,7 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
   * POST /predict
   * GET /metrics
 
-## ML + Metrics
+#### ML + Metrics
 
 * Model: DenseNet121
 * Classes: 15 (customized)
@@ -469,7 +469,7 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
 
 ---
 
-## Deployment: Docker Compose (Staging, Canary, Prod)
+#### Deployment: Docker Compose (Staging, Canary, Prod)
 
 | Service         | Description                        | Port(s)        |
 | --------------- | ---------------------------------- | -------------- |
@@ -482,9 +482,9 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
 
 ---
 
-## Monitoring Stack
+#### Monitoring Stack
 
-### Prometheus
+##### Prometheus
 
 * Scraping targets:
 
@@ -493,7 +493,7 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
   * eye-fastapi-canary
 * Common Error: server misbehaving if DNS isn't resolved. Use correct container_name and shared network.
 
-### Grafana
+##### Grafana
 
 * Dashboards for:
 
@@ -504,7 +504,7 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
 
 ---
 
-## Directory Structure
+##### Directory Structure
 
 
 monitoring/
@@ -523,7 +523,7 @@ monitoring/
 
 ---
 
-## Next Steps
+##### Next Steps
 
 * Add Traefik or Nginx for load balancing between environments
 * Trigger Airflow pipelines using MinIO + Label Studio annotations

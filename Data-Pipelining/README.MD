@@ -344,3 +344,96 @@ Access the dashboard at `http://<NODE_IP>:8501`
 
 This end-to-end setup allows for a modular, observable, and visual pipeline from data ingestion to transformation and inspection.
 
+
+---
+
+### 6. MLFlow Persistence Setup on Chameleon Cloud (Teammate Contribution)
+
+To enable persistent experiment tracking and model logging, MLFlow was set up on a GPU-enabled node on Chameleon Cloud.
+
+#### a. Node Provisioning
+
+A GPU instance was launched using the `CC-Ubuntu24.04-CUDA` image from the Chameleon GUI (CHI\@TACC site). A floating IP was associated for remote access.
+
+```python
+from chi import server, context, lease
+context.choose_project()
+context.choose_site(default="CHI@TACC")
+l = lease.get_lease("Project24001")
+s = server.Server("node-sb9880-01", reservation_id=l.node_reservations[0]["id"], image_name="CC-Ubuntu24.04-CUDA")
+s.submit(idempotent=True)
+s.associate_floating_ip()
+s.refresh()
+s.check_connectivity()
+```
+
+#### b. Security Group Configuration
+
+OpenStack security groups were configured to allow traffic to key services:
+
+* SSH (22)
+* Jupyter (8888)
+* MLFlow (8000)
+* MinIO (9000, 9001)
+
+Security rules were added via `os_conn.create_security_group()` and attached to the server.
+
+#### c. Docker and GPU Setup
+
+Docker was installed with:
+
+```bash
+curl -sSL https://get.docker.com/ | sudo sh
+sudo usermod -aG docker $USER
+```
+
+For NVIDIA GPUs:
+
+```bash
+# NVIDIA container runtime setup
+sudo apt install -y nvidia-container-toolkit
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+For AMD GPUs:
+
+```bash
+wget https://repo.radeon.com/amdgpu-install/6.3.3/ubuntu/noble/amdgpu-install_6.3.60303-1_all.deb
+sudo apt install ./amdgpu-install_6.3.60303-1_all.deb
+amdgpu-install -y --usecase=dkms
+sudo usermod -aG video,render $USER
+```
+
+#### d. Docker Image for MLFlow + Jupyter
+
+A custom image `jupyter-mlflow` was built from a Dockerfile with PyTorch, CUDA, Jupyter, and MLFlow preinstalled.
+
+```bash
+docker build -t jupyter-mlflow -f Dockerfile.jupyter-torch-mlflow-cuda .
+```
+
+#### e. Rclone Configuration for Object Storage
+
+Rclone was used to mount the CHI\@TACC object store to `/mnt/object`:
+
+```bash
+rclone config  # (manual step to set chi_tacc remote)
+rclone mount chi_tacc:object-persist-project24 /mnt/object --allow-other --daemon
+```
+
+Rclone config snippet:
+
+```
+[chi_tacc]
+type = swift
+user_id = <your-user-id>
+application_credential_id = <cred-id>
+application_credential_secret = <cred-secret>
+auth = https://chi.tacc.chameleoncloud.org:5000/v3
+region = CHI@TACC
+```
+
+---
+
+

@@ -1,56 +1,45 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  eye-fastapi:
+  eye-fastapi-prod:
     build:
-      context: .
-      dockerfile: dockerfile
-    container_name: eye-fastapi
+      context: ./fastapi
+      dockerfile: Dockerfile
+    container_name: eye-fastapi-prod
     ports:
       - "8000:8000"
+    volumes:
+      - ./fastapi:/app
     depends_on:
       - mlflow
-      - minio
     networks:
       - monitor-net
 
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.12.1
-    container_name: mlflow
+  eye-fastapi-staging:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    container_name: eye-fastapi-staging
     ports:
-      - "5000:5000"
-    environment:
-      - MLFLOW_TRACKING_URI=http://0.0.0.0:5000
-      - MLFLOW_ARTIFACT_ROOT=/mlflow/artifacts
+      - "8001:8000"
     volumes:
-      - ./mlruns:/mlflow/artifacts
-    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/artifacts
+      - ./fastapi:/app
+    depends_on:
+      - mlflow
     networks:
       - monitor-net
 
-  minio:
-    image: minio/minio
-    container_name: minio
+  eye-fastapi-canary:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    container_name: eye-fastapi-canary
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "8002:8000"
     volumes:
-      - ./minio/data:/data
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    networks:
-      - monitor-net
-
-  labelstudio:
-    image: heartexlabs/label-studio:latest
-    container_name: labelstudio
-    ports:
-      - "8080:8080"
-    environment:
-      - LABEL_STUDIO_USERNAME=admin
-      - LABEL_STUDIO_PASSWORD=admin
+      - ./fastapi:/app
+    depends_on:
+      - mlflow
     networks:
       - monitor-net
 
@@ -71,13 +60,60 @@ services:
       - "3000:3000"
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
-      - grafana-storage:/var/lib/grafana
     networks:
       - monitor-net
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/mlruns --host 0.0.0.0
+    networks:
+      - monitor-net
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: your-access-key
+      MINIO_ROOT_PASSWORD: your-secret-key
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - monitor-net
+
+  minio_init:
+    image: minio/mc
+    container_name: minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5 &&
+      mc alias set myminio http://minio:9000 your-access-key your-secret-key &&
+      mc mb -p myminio/production || echo 'Bucket already exists'
+      "
+    networks:
+      - monitor-net
+
+  labelstudio:
+    image: heartexlabs/label-studio:latest
+    container_name: labelstudio
+    ports:
+      - "8080:8080"
+    networks:
+      - monitor-net
+
+volumes:
+  minio_data:
 
 networks:
   monitor-net:
     driver: bridge
-
-volumes:
-  grafana-storage:

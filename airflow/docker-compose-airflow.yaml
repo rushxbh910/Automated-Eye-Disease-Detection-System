@@ -9,14 +9,17 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres_db:/var/lib/postgresql/data
+    networks:
+      - airflow-net
 
   airflow:
     image: apache/airflow:2.7.1
+    container_name: airflow
     restart: always
     depends_on:
       - postgres
     ports:
-      - "8090:8080"
+      - "8090:8080"  # Avoids conflict with Label Studio (8080)
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
@@ -24,8 +27,17 @@ services:
       AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD: airflow
     volumes:
       - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
     command: >
-      bash -c "airflow db upgrade && airflow users create --username airflow@example.com --password airflow --firstname Air --lastname Flow --role Admin --email airflow@example.com && airflow webserver"
+      bash -c "airflow db upgrade &&
+               airflow users create --username airflow@example.com --password airflow --firstname Air --lastname Flow --role Admin --email airflow@example.com &&
+               airflow webserver"
+    networks:
+      - airflow-net
 
 volumes:
   postgres_db:
+
+networks:
+  airflow-net:
+    driver: bridge

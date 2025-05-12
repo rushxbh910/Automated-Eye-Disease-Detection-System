@@ -7,8 +7,6 @@ import torch
 from onnxruntime.quantization import quantize_dynamic, QuantType
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.logging.logger import logging
-from src.exception.NetworkSecurityException import NetworkSecurityException
 
 
 def optimize_and_quantize_onnx_model(onnx_model_path: str, export_dir: str = "Artifacts/serving_models"):

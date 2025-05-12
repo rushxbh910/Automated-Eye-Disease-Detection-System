@@ -19,7 +19,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "8090:8080"  # Avoids conflict with Label Studio (8080)
+      - "3001:8080"  # Avoids conflict with Label Studio (8080)
     environment:
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow

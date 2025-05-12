@@ -10,8 +10,6 @@ services:
       - "8000:8000"
     volumes:
       - ./fastapi:/app
-    depends_on:
-      - mlflow
     networks:
       - monitor-net
 
@@ -36,17 +34,6 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - monitor-net
-
-  mlflow:
-    image: ghcr.io/mlflow/mlflow
-    container_name: mlflow
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./mlruns:/mlflow/mlruns
-    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/mlruns --host 0.0.0.0
-    networks:
-      - monitor-net      
 
   minio:
     image: minio/minio

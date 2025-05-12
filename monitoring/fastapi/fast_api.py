@@ -8,9 +8,6 @@ import torchvision.transforms as transforms
 from torchvision import models
 from torchvision.models import DenseNet121_Weights
 import time
-import numpy as np
-import mlflow
-import requests
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 app = FastAPI()
@@ -25,22 +22,6 @@ DRIFT_ALERT = Gauge("drift_alert", "1 if low confidence drift detected")
 low_confidence_streak = 0
 confidence_threshold = 0.5
 streak_threshold = 5
-
-# === MLflow setup with retry ===
-mlflow.set_tracking_uri("http://mlflow:5000")
-
-for _ in range(20):
-    try:
-        res = requests.get("http://mlflow:5000/health", timeout=3)
-        if res.status_code == 200:
-            break
-    except Exception:
-        print("⏳ Waiting for MLflow to start...")
-        time.sleep(3)
-else:
-    raise RuntimeError("❌ Could not connect to MLflow server.")
-
-mlflow.set_experiment("eye_disease_inference")
 
 # === Device ===
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -65,7 +46,7 @@ def get_model_densenet121(num_classes, freeze_layers=True):
     return model.to(device)
 
 model_path = "densenet121_model.pth"
-num_classes = 15  # Update this to match actual class count
+num_classes = 10
 model = get_model_densenet121(num_classes)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
@@ -105,10 +86,6 @@ async def predict(file: UploadFile = File(...)):
         else:
             low_confidence_streak = 0
             DRIFT_ALERT.set(0)
-
-        with mlflow.start_run(nested=True):
-            mlflow.log_metric("confidence", confidence)
-            mlflow.log_param("predicted_class", class_map[pred])
 
         return JSONResponse({
             "predicted_class": class_map[pred],

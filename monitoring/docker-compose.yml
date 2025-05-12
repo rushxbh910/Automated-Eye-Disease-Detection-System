@@ -13,8 +13,8 @@ services:
     networks:
       - monitor-net
     depends_on:
+      - prometheus
       - minio
-    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus

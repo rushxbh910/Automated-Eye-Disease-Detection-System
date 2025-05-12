@@ -1,41 +1,13 @@
 version: "3.8"
 
 services:
-  eye-fastapi-prod:
+  eye-fastapi:
     build:
       context: ./fastapi
       dockerfile: Dockerfile
-    container_name: eye-fastapi-prod
+    container_name: eye-fastapi
     ports:
       - "8000:8000"
-    volumes:
-      - ./fastapi:/app
-    depends_on:
-      - mlflow
-    networks:
-      - monitor-net
-
-  eye-fastapi-staging:
-    build:
-      context: ./fastapi
-      dockerfile: Dockerfile
-    container_name: eye-fastapi-staging
-    ports:
-      - "8001:8000"
-    volumes:
-      - ./fastapi:/app
-    depends_on:
-      - mlflow
-    networks:
-      - monitor-net
-
-  eye-fastapi-canary:
-    build:
-      context: ./fastapi
-      dockerfile: Dockerfile
-    container_name: eye-fastapi-canary
-    ports:
-      - "8002:8000"
     volumes:
       - ./fastapi:/app
     depends_on:
@@ -46,10 +18,12 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-    ports:
-      - "9090:9090"
+    dns:
+      - 8.8.8.8 
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
     networks:
       - monitor-net
 
@@ -64,7 +38,7 @@ services:
       - monitor-net
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.12.1
+    image: ghcr.io/mlflow/mlflow
     container_name: mlflow
     ports:
       - "5000:5000"
@@ -72,7 +46,7 @@ services:
       - ./mlruns:/mlflow/mlruns
     command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/mlruns --host 0.0.0.0
     networks:
-      - monitor-net
+      - monitor-net      
 
   minio:
     image: minio/minio

@@ -2,18 +2,6 @@ global:
   scrape_interval: 5s
 
 scrape_configs:
-  - job_name: 'prometheus'
+  - job_name: 'eye-fastapi'
     static_configs:
-      - targets: ['localhost:9090']
-
-  - job_name: 'fastapi-prod'
-    static_configs:
-      - targets: ['eye-fastapi-prod:8000']
-
-  - job_name: 'fastapi-staging'
-    static_configs:
-      - targets: ['eye-fastapi-staging:8000']
-
-  - job_name: 'fastapi-canary'
-    static_configs:
-      - targets: ['eye-fastapi-canary:8000']
+      - targets: ['eye-fastapi:8000']

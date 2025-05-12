@@ -6,8 +6,11 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from torchvision import models
-from torchvision.models import DenseNet121_Weights
+from torchvision.models import MobileNet_V3_Large_Weights
 import time
+import numpy as np
+import mlflow
+import requests
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 app = FastAPI()
@@ -23,16 +26,16 @@ low_confidence_streak = 0
 confidence_threshold = 0.5
 streak_threshold = 5
 
+
 # === Device ===
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # === Load model ===
-def get_model_densenet121(num_classes, freeze_layers=True):
-    model = models.densenet121(weights=None)
+def get_model_mobilenetv3(num_classes, freeze_layers=True):
+    model = models.mobilenet_v3_large(weights=MobileNet_V3_Large_Weights.DEFAULT)
     if freeze_layers:
-        features = list(model.features.children())
-        total_blocks = len(features)
-        for idx, module in enumerate(features):
+        total_blocks = len(model.features)
+        for idx, module in enumerate(model.features):
             if idx < total_blocks - 2:
                 for param in module.parameters():
                     param.requires_grad = False
@@ -40,19 +43,37 @@ def get_model_densenet121(num_classes, freeze_layers=True):
                 for param in module.parameters():
                     param.requires_grad = True
     model.classifier = nn.Sequential(
+        nn.Linear(model.classifier[0].in_features, 512),
+        nn.ReLU(),
         nn.Dropout(0.4),
-        nn.Linear(model.classifier.in_features, num_classes)
+        nn.Linear(512, num_classes)
     )
     return model.to(device)
 
-model_path = "densenet121_model.pth"
-num_classes = 10
-model = get_model_densenet121(num_classes)
+model_path = "MobileNetV3.pth"
+num_classes = 15
+model = get_model_mobilenetv3(num_classes)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
 # === Class Map ===
-class_map = {i: f"Class-{i}" for i in range(num_classes)}
+class_map = {
+    0: "Central Serous Chorioretinopathy",
+    1: "Diabetic Retinopathy",
+    2: "Disc Edema",
+    3: "Glaucoma",
+    4: "Healthy",
+    5: "Macular Scar",
+    6: "Myopia",
+    7: "Pterygium",
+    8: "Retinal Detachment",
+    9: "Retinitis Pigmentosa",
+    10: "Unused-Class-10",
+    11: "Unused-Class-11",
+    12: "Unused-Class-12",
+    13: "Unused-Class-13",
+    14: "Unused-Class-14"
+}
 
 # === Preprocessing ===
 transform = transforms.Compose([
@@ -86,6 +107,8 @@ async def predict(file: UploadFile = File(...)):
         else:
             low_confidence_streak = 0
             DRIFT_ALERT.set(0)
+
+
 
         return JSONResponse({
             "predicted_class": class_map[pred],

@@ -437,3 +437,97 @@ region = CHI@TACC
 ---
 
 
+This system deploys a DenseNet121-based eye disease classifier via FastAPI in multiple environments, tracks predictions with MLflow, and monitors inference metrics using Prometheus + Grafana. Feedback loops are supported via MinIO and Label Studio.
+
+---
+
+### 7. Serving and Monitoring
+
+This system deploys a DenseNet121-based eye disease classifier via FastAPI in multiple environments, tracks predictions with MLflow, and monitors inference metrics using Prometheus + Grafana. Feedback loops are supported via MinIO and Label Studio.
+
+## FastAPI Application (fast_api.py)
+
+* Loads densenet121_model.pth with 15 disease classes
+* Partial layer freezing for optimized inference
+* Prometheus metrics:
+
+  * predictions_total, prediction_errors_total
+  * inference_latency_seconds
+  * model_confidence_score
+  * drift_alert (based on confidence threshold)
+* Logs confidence + predicted_class to MLflow
+* Exposes:
+
+  * POST /predict
+  * GET /metrics
+
+## ML + Metrics
+
+* Model: DenseNet121
+* Classes: 15 (customized)
+* Drift: confidence < 0.5 for 5 consecutive samples
+
+---
+
+## Deployment: Docker Compose (Staging, Canary, Prod)
+
+| Service         | Description                        | Port(s)        |
+| --------------- | ---------------------------------- | -------------- |
+| eye-fastapi-* | FastAPI serving environments       | 8000         |
+| mlflow        | ML tracking and experiment logging | 5000         |
+| prometheus    | Metric scraper and alerting        | 9090         |
+| grafana       | Metric dashboard                   | 3000         |
+| minio         | Object storage for feedback data   | 9000, 9001 |
+| labelstudio   | Human-in-the-loop annotation       | 8080         |
+
+---
+
+## Monitoring Stack
+
+### Prometheus
+
+* Scraping targets:
+
+  * eye-fastapi-prod
+  * eye-fastapi-staging
+  * eye-fastapi-canary
+* Common Error: server misbehaving if DNS isn't resolved. Use correct container_name and shared network.
+
+### Grafana
+
+* Dashboards for:
+
+  * Request rate
+  * Confidence trend
+  * Drift alert status
+  * Inference latency per environment
+
+---
+
+## Directory Structure
+
+
+monitoring/
+├── docker-compose.yml
+├── prometheus.yml
+├── fastapi/
+│   ├── fast_api.py
+│   ├── densenet121_model.pth
+│   └── requirements.txt
+├── grafana/
+│   └── provisioning/
+├── mlruns/            # MLflow logs
+├── minio_data/        # Persistent volume
+└── labelstudio/
+
+
+---
+
+## Next Steps
+
+* Add Traefik or Nginx for load balancing between environments
+* Trigger Airflow pipelines using MinIO + Label Studio annotations
+* Provision Grafana dashboards via mounted JSONs
+
+---
+

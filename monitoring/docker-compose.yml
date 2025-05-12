@@ -12,6 +12,9 @@ services:
       - ./fastapi:/app
     networks:
       - monitor-net
+    depends_on:
+      - minio
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus

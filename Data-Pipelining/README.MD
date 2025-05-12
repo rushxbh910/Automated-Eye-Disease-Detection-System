@@ -516,3 +516,156 @@ This system deploys a DenseNet121-based eye disease classifier via FastAPI in mu
 
 ---
 
+### 7. Continous X
+
+# Automated Eye Disease Detection System (MLOps)
+
+This project implements a complete cloud-native MLOps pipeline for eye disease detection using PyTorch, Terraform, Docker, and Apache Airflow. It automates infrastructure provisioning, model training, evaluation, containerization, deployment, and monitoring.
+
+---
+
+## Project Overview
+
+- *Model Training:* Deep learning model (PyTorch) for disease classification  
+- *Data Storage:* Mounted block storage for persistent access across steps  
+- *Workflow Orchestration:* Apache Airflow DAG pipeline (scheduled retraining, staged deployment)   
+- *Experiment Tracking:* MLflow  
+
+---
+
+## Infrastructure Provisioning (Terraform)
+
+Terraform provisions compute resources and networking across *KVM@TACC* on Chameleon Cloud.
+
+### Provisioned Resources
+
+| Component       | Cloud Site  | Flavor     | Node Name                      | Floating IP |
+|----------------|-------------|------------|--------------------------------|-------------|
+| Training Node   | KVM@TACC    | m1.medium  | eye-train-train-1-rb5726     | yes         |
+| Serving Node    | KVM@TACC    | m1.large   | eye-serve-serve-1-rb5726     | yes          |
+
+### Block Storage
+
+- *Volume Name:* block-persist-project24  
+- *ID:* 7153c651-2757-45f9-99e0-9cbbace429f5  
+- *Mounted at:* /mnt/block on the training node  
+- *Usage:* model.pth and training data are persisted here  
+
+Terraform automatically attached and mounted this volume using a cloud-init script inside user_data_mount.sh.
+
+---
+
+## MLOps DAG (Apache Airflow)
+
+Airflow automates all stages of the ML lifecycle via eye_disease_ml_pipeline.py. Runs daily and retrains every 3 days.
+
+### 📊 DAG Stages
+
+1. *Train Model* (train_model.sh inside Docker)
+2. *Evaluate Offline* (test_model.py, launched via Docker Compose)
+3. *Monitor Performance* (monitor.py)
+
+---
+
+## Docker Services
+
+Docker Compose launches the following services on the persistent node:
+
+| Service        | Port   | Description                              |
+|----------------|--------|------------------------------------------|
+| FastAPI        | 8000   | API interface for predictions            |
+| Prometheus     | 9090   | Metrics collection                       |
+| Grafana        | 3000   | Metrics dashboard                        |
+| MLflow         | 5000   | Experiment tracking                      |
+| MinIO          | 9000   | Object storage backend                   |
+| Label Studio   | 8080   | Human labeling interface                 |
+| Airflow Web UI | 8090   | DAG management and execution interface   |
+
+---
+
+## Folder Structure
+
+bash
+
+Automated-Eye-Disease-Detection-System/
+
+├── airflow/
+
+│   ├── dags/
+
+│   │   └── eye_ml_pipeline.py
+
+│   ├── scripts/
+
+│   │   ├── offline_eval.py
+
+│   │   ├── load_test.py
+
+│   │   ├── monitor.py
+
+│   │   ├── run_evaluation.sh
+
+│   │   └── run_retrain.sh
+
+│   └── docker-compose-airflow.yaml
+
+├── tf/
+
+│   ├── main.tf, provider.tf, outputs.tf, variables.tf, terraform.tfvars, etc.
+
+├── trainer/
+
+│   ├── train.py
+
+│   └── run_training.sh
+
+├── docker/
+
+│   ├── Dockerfile.train, Dockerfile.serve
+
+├── model_serving/
+
+├── monitoring/
+
+│   ├── docker-compose.yml
+
+├── server/
+
+├── Data-Pipelining/
+
+└── README.md
+
+
+---
+
+## What's Automated?
+
+| Stage                        | Tool           | Triggered By            |
+|-----------------------------|----------------|--------------------------|
+| VM + IP Provisioning        | Terraform      | terraform apply        |
+| Volume Mounting             | Terraform      | user_data              |
+| Model Training              | Docker + Airflow | DAG task              |
+| Evaluation & Monitoring     | Docker Compose | DAG task                 |
+| Image Build & Deployment    | Airflow        | DAG task                 |
+| Load Testing & Promotion    | Airflow        | DAG task                 |
+
+---
+ 
+
+---
+
+## Final Setup Recap
+
+- Training: KVM@TACC with volume mount /mnt/block
+- Serving: KVM@TACC with floating IP
+- DAG triggers retrain → evaluation 
+- Monitoring 
+- Persistent node used to host containers for reproducible results
+
+---
+
+## Future Improvements
+
+- Add Prometheus alerting rules  
+- Push evaluation metrics to Grafana automatically  
+- Expand feedback loop to include active learning

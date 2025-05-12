@@ -138,4 +138,4 @@ docker run -d --rm -p 8888:8888 \
     jupyter-ray''')
 
 # Only run this when you're done with the object storage
-fusermount -u /mnt/object
+# s.execute("fusermount -u /mnt/object")
